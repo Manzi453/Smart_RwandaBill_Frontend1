@@ -26,5 +26,17 @@ public class SignupRequest {
     @Size(max = 100)
     private String fullName;
 
+    @NotBlank
+    @Size(max = 20)
+    private String telephone;
+
+    @NotBlank
+    @Size(max = 100)
+    private String district;
+
+    @NotBlank
+    @Size(max = 100)
+    private String sector;
+
     private Set<String> roles;
 }

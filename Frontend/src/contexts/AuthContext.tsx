@@ -1,0 +1,145 @@
+  import React, { createContext, useContext, useState } from 'react';
+
+export interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  telephone: string;
+  district: string;
+  sector: string;
+  role: 'superadmin' | 'admin' | 'member';
+  service?: 'security' | 'sanitation' | 'water'; // Optional service field for admins
+  group: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  login: (data: { email: string; password: string }) => Promise<void>;
+  logout: () => void;
+  signup: (data: { fullName: string; email: string; telephone: string; district: string; sector: string; password: string }) => Promise<void>;
+  googleSignup: (data: { fullName: string; email: string }) => Promise<void>;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const login = async (data: { email: string; password: string }) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Login failed');
+      }
+
+      const userData = await response.json();
+
+      // Map backend role to frontend role
+      const roleMapping: { [key: string]: 'superadmin' | 'admin' | 'member' } = {
+        'SUPER_ADMIN': 'superadmin',
+        'ADMIN': 'admin',
+        'USER': 'member'
+      };
+
+      const mappedUser: User = {
+        id: userData.id.toString(),
+        fullName: userData.fullName,
+        email: userData.email,
+        telephone: '', // Not returned by backend, could be added later
+        district: userData.district,
+        sector: userData.sector,
+        role: roleMapping[userData.role] || 'member',
+        group: 'Default Group', // Could be added to backend later
+      };
+
+      setUser(mappedUser);
+
+    } catch (error: any) {
+      throw new Error(error.message || "Login failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+  };
+
+  const signup = async (data: { fullName: string; email: string; telephone: string; district: string; sector: string; password: string }) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Signup failed');
+      }
+
+      // Signup successful, but don't auto-login
+      // User will need to login manually
+
+    } catch (error: any) {
+      throw new Error(error.message || "Signup failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const googleSignup = async (data: { fullName: string; email: string }) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/oauth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Google signup failed');
+      }
+
+      // Signup successful, but don't auto-login
+      // User will need to login manually
+
+    } catch (error: any) {
+      throw new Error(error.message || "Google signup failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, signup, googleSignup, isLoading, isAuthenticated: !!user }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

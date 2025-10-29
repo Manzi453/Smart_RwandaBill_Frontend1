@@ -40,6 +40,15 @@ public class User {
     @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
+    @Column(nullable = false, length = 20)
+    private String telephone;
+
+    @Column(nullable = false, length = 100)
+    private String district;
+
+    @Column(nullable = false, length = 100)
+    private String sector;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),

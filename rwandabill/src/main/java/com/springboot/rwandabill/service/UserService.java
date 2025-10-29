@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -41,6 +42,9 @@ public class UserService {
         }
 
         try {
+            // Determine roles based on email
+            Set<String> roles = determineRolesFromEmail(signUpRequest.getEmail());
+            
             // Create new user's account
             User user = new User(
                     signUpRequest.getUsername(),
@@ -48,10 +52,15 @@ public class UserService {
                     encoder.encode(signUpRequest.getPassword()),
                     signUpRequest.getFullName()
             );
+            
+            // Set additional fields
+            user.setTelephone(signUpRequest.getTelephone());
+            user.setDistrict(signUpRequest.getDistrict());
+            user.setSector(signUpRequest.getSector());
 
-            // Process roles
-            Set<Role> roles = processRoles(signUpRequest.getRoles());
-            user.setRoles(roles);
+            // Process and set roles
+            Set<Role> userRoles = processRoles(roles);
+            user.setRoles(userRoles);
             
             // Save the user
             userRepository.save(user);
@@ -75,7 +84,7 @@ public class UserService {
         // Process each specified role
         for (String role : strRoles) {
             Role userRole = switch (role.toLowerCase()) {
-                case "superadmin" -> roleRepository.findByName(ERole.ROLE_SUPERADMIN)
+                case "super_admin" -> roleRepository.findByName(ERole.ROLE_SUPERADMIN)
                         .orElseThrow(() -> new ResourceNotFoundException("Role", "name", "ROLE_SUPERADMIN"));
                 case "admin" -> roleRepository.findByName(ERole.ROLE_ADMIN)
                         .orElseThrow(() -> new ResourceNotFoundException("Role", "name", "ROLE_ADMIN"));
@@ -84,6 +93,34 @@ public class UserService {
                 default -> throw new ResourceNotFoundException("Role", "name", role);
             };
             roles.add(userRole);
+        }
+        
+        return roles;
+    }
+    
+    /**
+     * Determines user roles based on their email address
+     * @param email User's email address
+     * @return Set of role names
+     */
+    private Set<String> determineRolesFromEmail(String email) {
+        Set<String> roles = new HashSet<>();
+        String emailLower = email.toLowerCase();
+        
+        // Check for super admin
+        if (emailLower.equals("musanaivan453@gmail.com")) {
+            roles.add("super_admin");
+            return roles;
+        }
+        
+        // Check for admin (water, sanitation, or security in email)
+        List<String> adminKeywords = List.of("water", "sanitation", "security");
+        boolean isAdmin = adminKeywords.stream().anyMatch(emailLower::contains);
+        
+        if (isAdmin) {
+            roles.add("admin");
+        } else {
+            roles.add("user");
         }
         
         return roles;
