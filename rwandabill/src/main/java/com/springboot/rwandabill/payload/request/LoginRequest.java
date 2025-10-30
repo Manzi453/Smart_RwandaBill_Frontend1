@@ -1,7 +1,8 @@
 package com.springboot.rwandabill.payload.request;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class LoginRequest {
     @Size(max = 50)
@@ -33,6 +34,8 @@ public class LoginRequest {
     public String getPassword() {
         return password;
     }
+
+    public void setPassword(String password) {
         this.password = password;
     }
 }

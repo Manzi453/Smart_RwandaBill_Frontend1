@@ -10,8 +10,10 @@ import com.springboot.rwandabill.security.services.UserDetailsImpl;
 import com.springboot.rwandabill.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -56,13 +58,12 @@ public class AuthController {
       SecurityContextHolder.getContext().setAuthentication(authentication);
       String jwt = jwtUtils.generateJwtToken(authentication);
       
-      UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();    
+      UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
       List<String> roles = userDetails.getAuthorities().stream()
           .map(item -> item.getAuthority())
           .collect(Collectors.toList());
 
       return ResponseEntity.ok(new JwtResponse(jwt, 
-                           jwtUtils.getJwtExpirationMs(),
                            userDetails.getId(), 
                            userDetails.getUsername(), 
                            userDetails.getEmail(),
@@ -75,6 +76,9 @@ public class AuthController {
       return ResponseEntity
           .status(HttpStatus.UNAUTHORIZED)
           .body(new MessageResponse("Error: Invalid credentials!"));
+    }
+  }
+
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
         try {

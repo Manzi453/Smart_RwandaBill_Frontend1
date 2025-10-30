@@ -1,11 +1,10 @@
 package com.springboot.rwandabill.config;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
-import javax.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.List;
 
@@ -61,7 +60,6 @@ public class EnvConfig {
     }
 
     @PostConstruct
-    @Profile("!prod")
     public void logEnv() {
         System.out.println("=== Application Environment Variables ===");
         System.out.println("DB_URL: " + (dbUrl.contains("@") ? "[HIDDEN]" : dbUrl));
