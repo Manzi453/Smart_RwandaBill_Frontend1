@@ -1,17 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { Users, DollarSign, Clock, TrendingUp, Loader2, Activity, Search, Download } from "lucide-react";
-import { getAdminStats, getAdminPaymentsChart, getAdminPaymentStatusChart, getAdminUserGrowthChart, getAdminUsersList, getAdminPaymentsList, getAdminRecentActivities } from "@/lib/api";
+import { Users, DollarSign, Clock, TrendingUp, LogOut, Activity, Search, Download } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { mockService, mockStatistics, mockBills, mockUsers } from "@/lib/mockData";
 import AdminNavbar from "../components/admin/AdminNavbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 // Animation variants
@@ -42,103 +40,68 @@ const AnimatedPage = ({ children }) => (
 // Admin Dashboard
 const AdminDashboard = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
-    queryKey: ['adminStats', user?.role, user?.service],
-    queryFn: () => getAdminStats(user),
-  });
-
-  const { data: paymentsChart, isLoading: paymentsLoading } = useQuery({
-    queryKey: ['adminPaymentsChart', user?.role, user?.service],
-    queryFn: () => getAdminPaymentsChart(user),
-  });
-
-  const { data: paymentStatusChart, isLoading: statusLoading } = useQuery({
-    queryKey: ['adminPaymentStatusChart'],
-    queryFn: getAdminPaymentStatusChart,
-  });
-
-  const { data: userGrowthChart, isLoading: growthLoading } = useQuery({
-    queryKey: ['adminUserGrowthChart'],
-    queryFn: getAdminUserGrowthChart,
-  });
-
-  const { data: recentActivities, isLoading: activitiesLoading } = useQuery({
-    queryKey: ['adminRecentActivities'],
-    queryFn: getAdminRecentActivities,
-  });
+  React.useEffect(() => {
+    const timer = setInterval(() => setCurrentDate(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   const statCards = [
     {
-      label: t("totalUsers"),
-      value: stats ? stats.totalUsers.toLocaleString() : t("loading"),
+      label: t("totalUsers") || "Total Users",
+      value: mockStatistics.activeUsers.toLocaleString(),
       change: "+5%",
       icon: Users,
-      tooltip: t("totalUsersTooltip")
     },
     {
-      label: t("pendingPayments"),
-      value: stats ? stats.pendingPayments.toString() : t("loading"),
+      label: t("pendingPayments") || "Pending Payments",
+      value: mockStatistics.pendingBills.toString(),
       change: "-2%",
       icon: Clock,
-      tooltip: t("pendingPaymentsTooltip")
     },
     {
-      label: t("processedPayments"),
-      value: stats ? stats.processedPayments.toLocaleString() : t("loading"),
+      label: t("processedPayments") || "Processed Payments",
+      value: mockStatistics.paidBills.toLocaleString(),
       change: "+12%",
       icon: TrendingUp,
-      tooltip: t("processedPaymentsTooltip")
     },
     {
-      label: t("revenue"),
-      value: stats ? `${stats.revenue.toLocaleString()} RWF` : t("loading"),
+      label: t("revenue") || "Revenue",
+      value: `${(mockStatistics.totalRevenue / 1000000).toFixed(1)}M RWF`,
       change: "+8%",
       icon: DollarSign,
-      tooltip: t("revenueTooltip")
     }
   ];
 
-  // Scroll direction state
-  const [scrollDirection, setScrollDirection] = useState(null);
-
-  useEffect(() => {
-    let lastScrollY = window.pageYOffset;
-
-    const updateScrollDirection = () => {
-      const scrollY = window.pageYOffset;
-      if (scrollY > lastScrollY) {
-        setScrollDirection("down");
-      } else if (scrollY < lastScrollY) {
-        setScrollDirection("up");
-      }
-      lastScrollY = scrollY > 0 ? scrollY : 0;
-    };
-
-    window.addEventListener("scroll", updateScrollDirection);
-
-    return () => {
-      window.removeEventListener("scroll", updateScrollDirection);
-    };
-  }, []);
-
-  if (statsError) {
-    return (
-      <div className="p-6">
-        <div className="text-center text-red-600">
-          {t("errorLoadingAdminData")}: {statsError.message}
-        </div>
-      </div>
-    );
-  }
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
 
   return (
     <AnimatedPage>
       <div className="p-6 space-y-6">
-        <h1 className="text-3xl font-bold text-foreground">{t("adminDashboard")}</h1>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">{t("adminDashboard")}</h1>
+            <p className="text-muted-foreground mt-2">{user?.username || 'Admin'} - {user?.email || 'admin@example.com'}</p>
+            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              {currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </p>
+          </div>
+          <Button onClick={handleLogout} variant="destructive" className="flex items-center gap-2">
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {statCards.map((stat, index) => (
@@ -167,110 +130,85 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           <motion.div
             className="bg-card p-6 rounded-xl shadow-soft border"
-            initial={{ opacity: 0, x: scrollDirection === "down" ? -20 : 20 }}
+            initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <h2 className="text-xl font-semibold mb-4">Payment Trends</h2>
-            {paymentsLoading ? (
-              <div className="h-64 flex items-center justify-center">
-                <Loader2 className="animate-spin h-8 w-8" />
-              </div>
-            ) : paymentsChart ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={paymentsChart}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value, name) => [`${value}`, name === 'water' ? t('water') : name === 'security' ? t('security') : name === 'sanitation' ? t('sanitation') : name]} />
-                  <Legend />
-                  <Bar dataKey="water" fill="#8884d8" name={t('water')} />
-                  <Bar dataKey="security" fill="#82ca9d" name={t('security')} />
-                  <Bar dataKey="sanitation" fill="#ffc658" name={t('sanitation')} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex items-center justify-center bg-muted/30 rounded-lg">
-                <span className="text-muted-foreground">No data available</span>
-              </div>
-            )}
+            <h2 className="text-xl font-semibold mb-4">Bills Overview</h2>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={[
+                { name: 'Paid', value: mockStatistics.paidBills },
+                { name: 'Pending', value: mockStatistics.pendingBills },
+                { name: 'Overdue', value: mockStatistics.overdueBills }
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
           </motion.div>
 
           <motion.div
             className="bg-card p-6 rounded-xl shadow-soft border"
-            initial={{ opacity: 0, x: scrollDirection === "down" ? 20 : -20 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <h2 className="text-xl font-semibold mb-4">Payment Status</h2>
-            {statusLoading ? (
-              <div className="h-64 flex items-center justify-center">
-                <Loader2 className="animate-spin h-8 w-8" />
-              </div>
-            ) : paymentStatusChart ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={paymentStatusChart}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {paymentStatusChart.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value} payments`, 'Count']} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex items-center justify-center bg-muted/30 rounded-lg">
-                <span className="text-muted-foreground">No data available</span>
-              </div>
-            )}
+            <h2 className="text-xl font-semibold mb-4">Collection Rate</h2>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Collected', value: mockStatistics.collectionRate },
+                    { name: 'Pending', value: 100 - mockStatistics.collectionRate }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name} ${value.toFixed(1)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  <Cell fill="#82ca9d" />
+                  <Cell fill="#ffc658" />
+                </Pie>
+                <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+              </PieChart>
+            </ResponsiveContainer>
           </motion.div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           <motion.div
             className="bg-card p-6 rounded-xl shadow-soft border"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <h2 className="text-xl font-semibold mb-4">User Growth</h2>
-            {growthLoading ? (
-              <div className="h-64 flex items-center justify-center">
-                <Loader2 className="animate-spin h-8 w-8" />
-              </div>
-            ) : userGrowthChart ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={userGrowthChart}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`${value}`, 'Users']} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#ff7300"
-                    strokeWidth={2}
-                    dot={{ fill: '#ff7300' }}
-                    name="Users"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex items-center justify-center bg-muted/30 rounded-lg">
-                <span className="text-muted-foreground">No data available</span>
-              </div>
-            )}
+            <h2 className="text-xl font-semibold mb-4">Recent Bills</h2>
+            <div className="space-y-4">
+              {mockBills.slice(0, 3).map(bill => (
+                <div key={bill.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="font-medium">{bill.billNumber}</p>
+                    <p className="text-sm text-muted-foreground">{bill.customerName}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{bill.amount} RWF</p>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      bill.status === 'paid' ? 'bg-green-100 text-green-800' :
+                      bill.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {bill.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </motion.div>
 
           <motion.div
@@ -279,46 +217,20 @@ const AdminDashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
           >
-            <h2 className="text-xl font-semibold mb-4">Recent Activities</h2>
-            {activitiesLoading ? (
-              <div className="space-y-4">
-                {[1,2,3].map(i => (
-                  <div key={i} className="animate-pulse flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="p-2 bg-muted rounded-full">
-                        <Activity className="h-4 w-4" />
-                      </div>
-                      <div className="ml-4 space-y-2">
-                        <div className="h-4 bg-muted rounded w-32"></div>
-                        <div className="h-3 bg-muted rounded w-24"></div>
-                      </div>
-                    </div>
-                    <div className="h-3 bg-muted rounded w-16"></div>
-                  </div>
-                ))}
-              </div>
-            ) : recentActivities ? (
-              <div className="space-y-4">
-                {recentActivities.map(activity => (
-                  <div key={activity.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="p-2 bg-primary/10 rounded-full">
-                        <Activity className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="ml-4">
-                        <p className="font-medium">{activity.action}</p>
-                        <p className="text-sm text-muted-foreground">{activity.user}</p>
-                      </div>
-                    </div>
-                    <span className="text-sm text-muted-foreground">{activity.timestamp}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center bg-muted/30 rounded-lg">
-                <span className="text-muted-foreground">No activities available</span>
-              </div>
-            )}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Settings</h2>
+              <Button onClick={handleLogout} variant="destructive" size="sm" className="flex items-center gap-2">
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+            <div className="space-y-3 text-sm">
+              <p><strong>User:</strong> {user?.username || 'Admin'}</p>
+              <p><strong>Email:</strong> {user?.email || 'admin@example.com'}</p>
+              <p><strong>Role:</strong> {user?.roles?.[0] || 'ROLE_ADMIN'}</p>
+              <p><strong>Total Bills:</strong> {mockStatistics.totalBills}</p>
+              <p><strong>Collection Rate:</strong> {mockStatistics.collectionRate}%</p>
+            </div>
           </motion.div>
         </div>
       </div>
@@ -329,19 +241,14 @@ const AdminDashboard = () => {
 // Users Section
 const UsersSection = () => {
   const { t } = useTranslation();
-  const { data: users, isLoading } = useQuery({
-    queryKey: ['adminUsersList'],
-    queryFn: getAdminUsersList,
-  });
-
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredUsers = users?.filter(user => {
+  const filteredUsers = mockUsers.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || user.status.toLowerCase() === statusFilter;
     return matchesSearch && matchesStatus;
-  }) || [];
+  });
 
   return (
     <AnimatedPage>
@@ -383,39 +290,28 @@ const UsersSection = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {isLoading ? (
-                  Array(5).fill(0).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-24"></div></td>
-                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-32"></div></td>
-                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-20"></div></td>
-                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-16"></div></td>
-                      <td className="px-6 py-4"><div className="animate-pulse h-8 bg-muted rounded w-16"></div></td>
-                    </tr>
-                  ))
-                ) : filteredUsers.length > 0 ? (
+                {filteredUsers.length > 0 ? (
                   filteredUsers.map(user => (
                     <tr key={user.id} className="hover:bg-muted/30">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{user.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{user.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{user.lastPayment}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{user.phone}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.status === 'Active' ? 'bg-green-100 text-green-800' :
-                          user.status === 'Inactive' ? 'bg-gray-100 text-gray-800' :
-                          'bg-yellow-100 text-yellow-800'
+                          user.status === 'active' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
                         }`}>
                           {user.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <Button variant="outline" size="sm">{t("view")}</Button>
+                        <Button variant="outline" size="sm">{t("view") || "View"}</Button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-6 py-4 text-center text-muted-foreground">{t("noUsersFound")}</td>
+                    <td colSpan={5} className="px-6 py-4 text-center text-muted-foreground">{t("noUsersFound") || "No users found"}</td>
                   </tr>
                 )}
               </tbody>
@@ -430,15 +326,9 @@ const UsersSection = () => {
 // Payments Section
 const PaymentsSection = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const { data: payments, isLoading } = useQuery({
-    queryKey: ['adminPaymentsList', user?.role, user?.service],
-    queryFn: () => getAdminPaymentsList(user),
-  });
 
   const handleExport = () => {
-    toast.success(t("exportStarted"));
-    // Mock export
+    toast.success(t("exportStarted") || "Export started");
   };
 
   return (
@@ -466,41 +356,30 @@ const PaymentsSection = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {isLoading ? (
-                  Array(5).fill(0).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-24"></div></td>
-                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-16"></div></td>
-                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-12"></div></td>
-                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-16"></div></td>
-                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-20"></div></td>
-                      <td className="px-6 py-4"><div className="animate-pulse h-8 bg-muted rounded w-16"></div></td>
-                    </tr>
-                  ))
-                ) : payments && payments.length > 0 ? (
-                  payments.map(payment => (
-                    <tr key={payment.id} className="hover:bg-muted/30">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{payment.user}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{payment.service}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{payment.amount} RWF</td>
+                {mockBills.length > 0 ? (
+                  mockBills.map(bill => (
+                    <tr key={bill.id} className="hover:bg-muted/30">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{bill.customerName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{bill.service}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{bill.amount} RWF</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          payment.status === 'Paid' ? 'bg-green-100 text-green-800' :
-                          payment.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                          bill.status === 'paid' ? 'bg-green-100 text-green-800' :
+                          bill.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                          {payment.status}
+                          {bill.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{payment.date}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{bill.date}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <Button variant="outline" size="sm">{t("view")}</Button>
+                        <Button variant="outline" size="sm">{t("view") || "View"}</Button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-muted-foreground">{t("noPaymentsFound")}</td>
+                    <td colSpan={6} className="px-6 py-4 text-center text-muted-foreground">{t("noPaymentsFound") || "No payments found"}</td>
                   </tr>
                 )}
               </tbody>
@@ -563,46 +442,10 @@ const SettingsSection = () => {
 
 // Main Admin component
 const Admin = () => {
-  const [activeSection, setActiveSection] = useState("dashboard");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const renderSection = () => {
-    switch (activeSection) {
-      case "dashboard":
-        return <AdminDashboard />;
-      case "users":
-        return <UsersSection />;
-      case "payments":
-        return <PaymentsSection />;
-      case "settings":
-        return <SettingsSection />;
-      default:
-        return <AdminDashboard />;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNavbar
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        collapsed={sidebarCollapsed}
-        onCollapsedChange={setSidebarCollapsed}
-      />
-
-      {/* Main Content Area */}
-      <div className={`transition-all duration-300 ${
-        sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
-      }`}>
-        <div className="min-h-screen pt-16">
-          <AnimatePresence mode="wait">
-            <AnimatedPage key={activeSection}>
-              {renderSection()}
-            </AnimatedPage>
-          </AnimatePresence>
-        </div>
-      </div>
-    </div>
+    <AnimatePresence mode="wait">
+      <AdminDashboard />
+    </AnimatePresence>
   );
 };
 

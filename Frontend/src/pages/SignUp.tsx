@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
-import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 declare global {
   interface Window {
@@ -49,7 +49,6 @@ export default function SignUpPage() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { googleSignup } = useAuth();
 
   const [form, setForm] = useState({
     telephone: "",
@@ -122,107 +121,72 @@ export default function SignUpPage() {
 
       setIsLoading(true);
       
+      // Simulate signup delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Determine roles based on email
       const roles = getRoleFromEmail(form.email);
       
-      // Prepare user data
-      const userData = {
+      // Map roles to proper format
+      const roleMapping: { [key: string]: string } = {
+        'super_admin': 'ROLE_SUPERADMIN',
+        'admin': 'ROLE_ADMIN',
+        'user': 'ROLE_USER'
+      };
+      
+      // Mock signup - store user data in localStorage
+      const mockUser = {
+        id: Date.now().toString(),
         username: form.fullName,
         email: form.email,
-        password: form.password,
         telephone: form.telephone,
         district: form.district,
         sector: form.sector,
-        roles
+        roles: roles.map(r => roleMapping[r] || 'ROLE_USER')
       };
 
-      // Call the auth service
-      const response = await authService.signup(userData);
+      localStorage.setItem('token', 'mock-token-' + Date.now());
+      localStorage.setItem('user', JSON.stringify(mockUser));
       
-      // Handle successful signup
-      if (response.token) {
-        localStorage.setItem('token', response.token);
-        // Redirect based on role
-        if (roles.includes('super_admin')) {
-          navigate('/superadmin/dashboard');
-        } else if (roles.includes('admin')) {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/user/dashboard');
-        }
+      toast.success('Signup successful! Redirecting...');
+      
+      // Redirect based on role
+      if (roles.includes('super_admin')) {
+        navigate('/superadmin/dashboard');
+      } else if (roles.includes('admin')) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/user/dashboard');
       }
     } catch (error: any) {
       console.error('Signup error:', error);
       setError(error.message || 'An error occurred during signup. Please try again.');
+      toast.error(error.message || 'Signup failed');
     } finally {
       setIsLoading(false);
-    }
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: form.fullName,
-          email: form.email,
-          password: form.password,
-          telephone: form.telephone,
-          district: form.district,
-          sector: form.sector,
-          roles: ["user"]
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Signup failed');
-      }
-
-      // Show success message and redirect to login
-      alert("Registration successful! Please login with your credentials.");
-      navigate("/login");
-      } else {
-        const error = await response.text();
-        alert("Signup failed: " + error);
-      }
-    } catch (error) {
-      console.error("Error during signup:", error);
-      alert("An error occurred during signup. Please try again.");
     }
   };
 
   const handleGoogleSignUp = async () => {
     console.log("Google sign up initiated");
+    
+    // Mock Google signup
+    try {
+      const mockUser = {
+        id: Date.now().toString(),
+        username: 'Google User',
+        email: 'googleuser@example.com',
+        roles: ['user']
+      };
 
-    // Initialize Google Identity Services
-    if (window.google) {
-      window.google.accounts.id.initialize({
-        client_id: 'YOUR_GOOGLE_CLIENT_ID', // Replace with your actual Client ID
-        callback: async (response: any) => {
-          console.log("Google response:", response);
-
-          // Decode the JWT token to get user info
-          const userInfo = JSON.parse(atob(response.credential.split('.')[1]));
-          console.log("User info:", userInfo);
-
-          // Extract user data
-          const { name, email } = userInfo;
-
-          try {
-            await googleSignup({ fullName: name, email });
-            alert("Google signup successful! Please login.");
-            navigate("/login");
-          } catch (error: any) {
-            console.error("Google signup failed:", error);
-            alert("Google signup failed: " + error.message);
-          }
-        },
-      });
-
-      // Prompt the user to sign in
-      window.google.accounts.id.prompt();
-    } else {
-      alert("Google Identity Services not loaded.");
+      localStorage.setItem('token', 'mock-token-' + Date.now());
+      localStorage.setItem('user', JSON.stringify(mockUser));
+      
+      toast.success('Google signup successful! Redirecting...');
+      navigate('/user/dashboard');
+    } catch (error: any) {
+      console.error("Google signup failed:", error);
+      toast.error("Google signup failed");
     }
   };
   const availableSectors = form.district
@@ -230,8 +194,46 @@ export default function SignUpPage() {
     : [];
 
   return (
-    // Add this at the top of your file with other imports
-  const { toast } = useToast();
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4 relative overflow-hidden py-8"
+    >
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="w-full max-w-md relative z-10"
+      >
+        {/* Logo Section */}
+        <div className="text-center mb-8">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl mb-4 shadow-lg"
+          >
+            <span className="text-white font-bold text-2xl">RB</span>
+          </motion.div>
+          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
+          <p className="text-purple-200">Join Rwanda Bills today</p>
+        </div>
+
+        {/* Main Card */}
+        <Card className="shadow-2xl rounded-3xl overflow-hidden border-0 backdrop-blur-xl bg-white/95">
+          <CardContent className="p-8">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full mb-4"
               onClick={handleGoogleSignUp}
             >
               <FcGoogle className="mr-2 h-5 w-5" />
@@ -375,22 +377,27 @@ export default function SignUpPage() {
               </div>
             </form>
 
-              <p className="text-center text-gray-600 text-sm mt-6">
-                {t("alreadyHaveAccount")}{" "}
-                <Link
-                  to="/login"
-                  className="text-blue-600 font-medium hover:underline"
-                >
-                  {t("signIn")}
-                </Link>
-              </p>
+            <p className="text-center text-gray-600 text-sm mt-6">
+              {t("alreadyHaveAccount")}{" "}
+              <Link
+                to="/login"
+                className="text-blue-600 font-medium hover:underline"
+              >
+                {t("signIn")}
+              </Link>
+            </p>
 
             <p className="text-xs text-center text-gray-500 mt-4">
               {t("agreeToTerms")}
             </p>
           </CardContent>
         </Card>
-      </div>
+
+        {/* Footer Text */}
+        <p className="text-center text-purple-200 text-xs mt-6">
+          By signing up, you agree to our Terms of Service and Privacy Policy
+        </p>
+      </motion.div>
     </motion.div>
   );
 }

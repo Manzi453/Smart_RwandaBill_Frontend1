@@ -1,67 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserStats, getUserPayments, getUserPaymentHistory, getUserNotifications } from '@/lib/api';
-import { CreditCard, Clock, CheckCircle, DollarSign, Bell, Receipt, TrendingUp, AlertTriangle } from 'lucide-react';
+import { mockBills, mockStatistics } from '@/lib/mockData';
+import { CreditCard, Clock, CheckCircle, DollarSign, Bell, Receipt, TrendingUp, AlertTriangle, LogOut, CheckCircle as CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['userStats', user?.id],
-    queryFn: () => getUserStats(user?.id || ''),
-    enabled: !!user?.id,
-  });
+  React.useEffect(() => {
+    const timer = setInterval(() => setCurrentDate(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const { data: payments, isLoading: paymentsLoading } = useQuery({
-    queryKey: ['userPayments', user?.id],
-    queryFn: () => getUserPayments(user?.id || ''),
-    enabled: !!user?.id,
-  });
-
-  const { data: paymentHistory, isLoading: historyLoading } = useQuery({
-    queryKey: ['userPaymentHistory', user?.id],
-    queryFn: () => getUserPaymentHistory(user?.id || ''),
-    enabled: !!user?.id,
-  });
-
-  const { data: notifications, isLoading: notificationsLoading } = useQuery({
-    queryKey: ['userNotifications', user?.id],
-    queryFn: () => getUserNotifications(user?.id || ''),
-    enabled: !!user?.id,
-  });
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
 
   const statCards = [
     {
-      label: t("totalPayments"),
-      value: stats ? stats.totalPayments.toString() : t("loading"),
+      label: t("totalPayments") || "Total Payments",
+      value: mockStatistics.totalBills.toString(),
       icon: Receipt,
       color: "text-blue-600",
     },
     {
-      label: t("pendingPayments"),
-      value: stats ? stats.pendingPayments.toString() : t("loading"),
+      label: t("pendingPayments") || "Pending Payments",
+      value: mockStatistics.pendingBills.toString(),
       icon: Clock,
       color: "text-orange-600",
     },
     {
-      label: t("completedPayments"),
-      value: stats ? stats.completedPayments.toString() : t("loading"),
+      label: t("completedPayments") || "Completed Payments",
+      value: mockStatistics.paidBills.toString(),
       icon: CheckCircle,
       color: "text-green-600",
     },
     {
-      label: t("totalAmount"),
-      value: stats ? `${stats.totalAmount.toLocaleString()} RWF` : t("loading"),
+      label: t("totalAmount") || "Total Amount",
+      value: `${(mockStatistics.totalRevenue / 1000000).toFixed(1)}M RWF`,
       icon: DollarSign,
       color: "text-purple-600",
     },
@@ -95,15 +84,20 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">{t("userDashboard")}</h1>
-            <p className="text-muted-foreground mt-2">{t("dashboardDesc")}</p>
+            <h1 className="text-3xl font-bold text-foreground">{t("userDashboard") || "Dashboard"}</h1>
+            <p className="text-muted-foreground mt-2">{user?.username || 'User'} - {user?.email || 'user@example.com'}</p>
+            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              {currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </p>
           </div>
           <div className="flex gap-4">
-            <Button asChild variant="outline">
-              <Link to="/admin">{t("adminPanel")}</Link>
+            <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+              <LogOut className="h-4 w-4" />
+              {t("logout") || "Logout"}
             </Button>
             <Button asChild>
-              <Link to="/">{t("GoBack")}</Link>
+              <Link to="/">{t("GoBack") || "Go Back"}</Link>
             </Button>
           </div>
         </div>
@@ -154,40 +148,24 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {paymentsLoading ? (
-                    <div className="space-y-4">
-                      {[1,2,3].map(i => (
-                        <div key={i} className="animate-pulse flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                          <div className="space-y-2">
-                            <div className="h-4 bg-muted rounded w-24"></div>
-                            <div className="h-3 bg-muted rounded w-16"></div>
-                          </div>
-                          <div className="h-6 bg-muted rounded w-16"></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : payments && payments.length > 0 ? (
-                    <div className="space-y-4">
-                      {payments.slice(0, 5).map(payment => (
-                        <div key={payment.id} className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-lg">
+                  <div className="space-y-4">
+                      {mockBills.slice(0, 5).map(bill => (
+                        <div key={bill.id} className="flex justify-between items-center p-3 hover:bg-muted/50 rounded-lg">
                           <div>
-                            <p className="font-medium">{payment.service}</p>
+                            <p className="font-medium">{bill.billNumber}</p>
                             <p className="text-sm text-muted-foreground">
-                              {payment.status === 'Paid' ? t("paid") : t("dueDate")}: {payment.dueDate}
+                              {bill.status === 'paid' ? t("paid") || "Paid" : t("dueDate") || "Due Date"}: {bill.dueDate}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">{payment.amount} RWF</p>
-                            <Badge className={getStatusColor(payment.status)}>
-                              {payment.status}
+                            <p className="font-medium">{bill.amount} RWF</p>
+                            <Badge className={getStatusColor(bill.status)}>
+                              {bill.status}
                             </Badge>
                           </div>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-8">{t("noPaymentsFound")}</p>
-                  )}
                 </CardContent>
               </Card>
 
@@ -200,34 +178,18 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {notificationsLoading ? (
-                    <div className="space-y-4">
-                      {[1,2,3].map(i => (
-                        <div key={i} className="animate-pulse flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
-                          <div className="h-4 w-4 bg-muted rounded"></div>
-                          <div className="space-y-2 flex-1">
-                            <div className="h-4 bg-muted rounded w-32"></div>
-                            <div className="h-3 bg-muted rounded w-48"></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : notifications && notifications.length > 0 ? (
-                    <div className="space-y-4">
-                      {notifications.slice(0, 5).map(notification => (
-                        <div key={notification.id} className="flex items-start gap-3 p-3 hover:bg-muted/50 rounded-lg">
-                          {getNotificationIcon(notification.type)}
+                  <div className="space-y-4">
+                      {mockBills.slice(0, 5).map(bill => (
+                        <div key={bill.id} className="flex items-start gap-3 p-3 hover:bg-muted/50 rounded-lg">
+                          {bill.status === 'overdue' ? <AlertTriangle className="h-4 w-4 text-orange-500" /> : <CheckCircle className="h-4 w-4 text-green-500" />}
                           <div className="flex-1">
-                            <p className="font-medium text-sm">{notification.title}</p>
-                            <p className="text-sm text-muted-foreground">{notification.message}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{notification.date}</p>
+                            <p className="font-medium text-sm">{bill.billNumber}</p>
+                            <p className="text-sm text-muted-foreground">Amount: {bill.amount} RWF</p>
+                            <p className="text-xs text-muted-foreground mt-1">{bill.date}</p>
                           </div>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-8">{t("noActivitiesAvailable")}</p>
-                  )}
                 </CardContent>
               </Card>
             </div>
@@ -239,48 +201,29 @@ const Dashboard = () => {
                 <CardTitle>{t("currentPayments")}</CardTitle>
               </CardHeader>
               <CardContent>
-                {paymentsLoading ? (
-                  <div className="space-y-4">
-                    {[1,2,3,4,5].map(i => (
-                      <div key={i} className="animate-pulse flex justify-between items-center p-4 border rounded-lg">
-                        <div className="space-y-2">
-                          <div className="h-4 bg-muted rounded w-24"></div>
-                          <div className="h-3 bg-muted rounded w-32"></div>
-                        </div>
-                        <div className="text-right space-y-2">
-                          <div className="h-4 bg-muted rounded w-16"></div>
-                          <div className="h-6 bg-muted rounded w-16"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : payments && payments.length > 0 ? (
-                  <div className="space-y-4">
-                    {payments.map(payment => (
-                      <div key={payment.id} className="flex justify-between items-center p-4 border rounded-lg hover:bg-muted/50">
+                <div className="space-y-4">
+                    {mockBills.map(bill => (
+                      <div key={bill.id} className="flex justify-between items-center p-4 border rounded-lg hover:bg-muted/50">
                         <div>
-                          <p className="font-medium">{payment.service}</p>
+                          <p className="font-medium">{bill.billNumber}</p>
                           <p className="text-sm text-muted-foreground">
-                            {t("dueDate")}: {payment.dueDate}
+                            {t("dueDate") || "Due Date"}: {bill.dueDate}
                           </p>
-                          {payment.date && (
+                          {bill.status === 'paid' && (
                             <p className="text-sm text-muted-foreground">
-                              {t("paid")}: {payment.date}
+                              {t("paid") || "Paid"}: {bill.date}
                             </p>
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-lg">{payment.amount} RWF</p>
-                          <Badge className={getStatusColor(payment.status)}>
-                            {payment.status}
+                          <p className="font-medium text-lg">{bill.amount} RWF</p>
+                          <Badge className={getStatusColor(bill.status)}>
+                            {bill.status}
                           </Badge>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">{t("noPaymentsFound")}</p>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -291,41 +234,22 @@ const Dashboard = () => {
                 <CardTitle>{t("paymentTrends")}</CardTitle>
               </CardHeader>
               <CardContent>
-                {historyLoading ? (
-                  <div className="space-y-4">
-                    {[1,2,3,4,5,6].map(i => (
-                      <div key={i} className="animate-pulse flex justify-between items-center p-4 border rounded-lg">
-                        <div className="space-y-2">
-                          <div className="h-4 bg-muted rounded w-24"></div>
-                          <div className="h-3 bg-muted rounded w-20"></div>
-                        </div>
-                        <div className="text-right space-y-2">
-                          <div className="h-4 bg-muted rounded w-16"></div>
-                          <div className="h-6 bg-muted rounded w-16"></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : paymentHistory && paymentHistory.length > 0 ? (
-                  <div className="space-y-4">
-                    {paymentHistory.map(payment => (
-                      <div key={payment.id} className="flex justify-between items-center p-4 border rounded-lg hover:bg-muted/50">
+                <div className="space-y-4">
+                    {mockBills.map(bill => (
+                      <div key={bill.id} className="flex justify-between items-center p-4 border rounded-lg hover:bg-muted/50">
                         <div>
-                          <p className="font-medium">{payment.service}</p>
-                          <p className="text-sm text-muted-foreground">{payment.date}</p>
+                          <p className="font-medium">{bill.service}</p>
+                          <p className="text-sm text-muted-foreground">{bill.date}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">{payment.amount} RWF</p>
-                          <Badge className={getStatusColor(payment.status)}>
-                            {payment.status}
+                          <p className="font-medium">{bill.amount} RWF</p>
+                          <Badge className={getStatusColor(bill.status)}>
+                            {bill.status}
                           </Badge>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">{t("noDataAvailable")}</p>
-                )}
               </CardContent>
             </Card>
           </TabsContent>

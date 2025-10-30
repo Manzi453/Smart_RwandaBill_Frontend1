@@ -1,7 +1,4 @@
-import axios from 'axios';
-import { handleApiError } from '../utils/errorHandler';
-
-const API_URL = 'http://localhost:8080/api/auth';
+// Mock Auth Service - No backend integration
 
 // Types
 export interface User {
@@ -39,85 +36,67 @@ export interface SignupData {
   roles?: string[];
 }
 
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: 'http://localhost:8080',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add request interceptor to include auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor to handle 401 errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Clear auth data and redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
-
 export const authService = {
-  // Sign up a new user
+  // Sign up a new user (mock)
   signup: async (userData: SignupData): Promise<AuthResponse> => {
     try {
-      const response = await api.post<AuthResponse>('/api/auth/signup', {
-        ...userData,
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const mockResponse: AuthResponse = {
+        token: 'mock-token-' + Date.now(),
+        type: 'Bearer',
+        id: Date.now().toString(),
+        username: userData.username,
+        email: userData.email,
+        fullName: userData.fullName,
+        telephone: userData.telephone,
+        district: userData.district,
+        sector: userData.sector,
         roles: userData.roles || ['user']
-      });
-      return response.data;
+      };
+      
+      return mockResponse;
     } catch (error: any) {
-      throw handleApiError(error);
+      throw new Error(error.message || 'Signup failed');
     }
   },
 
-  // Login with email/phone and password
+  // Login with email/phone and password (mock)
   login: async (credentials: { email?: string; phoneNumber?: string; password: string }): Promise<AuthResponse> => {
     try {
-      const requestData = {
-        ...(credentials.email ? { email: credentials.email } : {}),
-        ...(credentials.phoneNumber ? { phoneNumber: credentials.phoneNumber } : {}),
-        password: credentials.password
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const mockResponse: AuthResponse = {
+        token: 'mock-token-' + Date.now(),
+        type: 'Bearer',
+        id: '1',
+        username: 'Test User',
+        email: credentials.email || 'user@example.com',
+        fullName: 'Test User',
+        telephone: '+250788123456',
+        district: 'Kigali',
+        sector: 'Nyarugenge',
+        roles: ['ROLE_USER']
       };
       
-      const response = await api.post<AuthResponse>('/api/auth/signin', requestData);
-      
       // Store the token and user data in local storage
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      if (mockResponse.token) {
+        localStorage.setItem('token', mockResponse.token);
         localStorage.setItem('user', JSON.stringify({
-          id: response.data.id,
-          username: response.data.username,
-          email: response.data.email,
-          fullName: response.data.fullName,
-          telephone: response.data.telephone,
-          district: response.data.district,
-          sector: response.data.sector,
-          roles: response.data.roles
+          id: mockResponse.id,
+          username: mockResponse.username,
+          email: mockResponse.email,
+          fullName: mockResponse.fullName,
+          telephone: mockResponse.telephone,
+          district: mockResponse.district,
+          sector: mockResponse.sector,
+          roles: mockResponse.roles
         }));
       }
       
-      return response.data;
+      return mockResponse;
     } catch (error: any) {
-      throw handleApiError(error);
+      throw new Error(error.message || 'Login failed');
     }
   },
 
@@ -150,6 +129,3 @@ export const authService = {
     window.location.href = '/login';
   }
 };
-
-// Export the configured axios instance for other API calls
-export default api;

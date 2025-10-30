@@ -1,6 +1,6 @@
+import React, { Suspense, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { lazy, Suspense, useEffect, useState } from "react";
 import { Landing } from "./pages/Landing";
 import LoginPage from "./pages/LoginPage";
 import { Admin } from "./pages/Admin";
@@ -9,7 +9,6 @@ import { User } from "./pages/User";
 import SuperAdmin from "./pages/SuperAdmin";
 import { AnimatePresence, motion } from "framer-motion";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
-import { authService } from "./lib/api/auth";
 import { toast, Toaster } from "sonner";
 
 const queryClient = new QueryClient();
@@ -38,12 +37,13 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Check if user is logged in on initial load
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuth = () => {
       try {
-        const token = authService.getToken();
+        const token = localStorage.getItem('token');
         if (token) {
-          const userData = authService.getCurrentUser();
-          if (userData) {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const userData = JSON.parse(userStr);
             setUser(userData);
             setIsAuthenticated(true);
           }
@@ -60,11 +60,14 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      await authService.login({ email, password });
-      const userData = authService.getCurrentUser();
-      setUser(userData);
-      setIsAuthenticated(true);
-      toast.success('Login successful!');
+      // Mock login - already handled in LoginPage
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        setUser(userData);
+        setIsAuthenticated(true);
+        toast.success('Login successful!');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Login failed');
       throw error;
@@ -72,9 +75,11 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = () => {
-    authService.logout();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
+    toast.success('Logged out successfully');
   };
 
   return (
@@ -107,9 +112,13 @@ const ProtectedRoute = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRoles.length > 0 && !user?.roles.some((role: string) => requiredRoles.includes(role))) {
-    toast.error('You do not have permission to access this page');
-    return <Navigate to="/" replace />;
+  if (requiredRoles.length > 0) {
+    const userRoles = user?.roles || [];
+    const hasRequiredRole = userRoles.some((role: string) => requiredRoles.includes(role));
+    if (!hasRequiredRole) {
+      toast.error('You do not have permission to access this page');
+      return <Navigate to="/" replace />;
+    }
   }
 
   return children;
@@ -212,8 +221,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
-          <div className="min-h-screen bg-gray-50">
-            <LanguageSwitcher />
+          <div className="min-h-screen bg-gray-50 relative">
             <Suspense fallback={
               <div className="flex items-center justify-center min-h-screen">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

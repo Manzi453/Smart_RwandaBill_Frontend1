@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserStats, getUserPayments, getUserPaymentHistory, getUserNotifications } from "@/lib/api";
 import UserNavbar from "../components/user/UserNavbar";
 import UserProfile from "../components/user/UserProfile";
 import UserSettings from "../components/user/UserSettings";
@@ -36,44 +34,10 @@ const AnimatedPage = ({ children }) => (
 
 // Main User component with navbar and sections
 const User = () => {
-  const [activeSection, setActiveSection] = useState("dashboard");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const renderSection = () => {
-    switch (activeSection) {
-      case "dashboard":
-        return <Dashboard />;
-      case "profile":
-        return <UserProfile />;
-      case "settings":
-        return <UserSettings />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background">
-      <UserNavbar
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        collapsed={sidebarCollapsed}
-        onCollapsedChange={setSidebarCollapsed}
-      />
-
-      {/* Main Content Area */}
-      <div className={`transition-all duration-300 ${
-        sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
-      }`}>
-        <div className="min-h-screen">
-          <AnimatePresence mode="wait">
-            <AnimatedPage key={activeSection}>
-              {renderSection()}
-            </AnimatedPage>
-          </AnimatePresence>
-        </div>
-      </div>
-    </div>
+    <AnimatePresence mode="wait">
+      <Dashboard />
+    </AnimatePresence>
   );
 };
 

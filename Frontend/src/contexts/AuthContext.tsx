@@ -1,15 +1,15 @@
-  import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 export interface User {
   id: string;
-  fullName: string;
+  username?: string;
+  fullName?: string;
   email: string;
   telephone: string;
   district: string;
   sector: string;
-  role: 'superadmin' | 'admin' | 'member';
-  service?: 'security' | 'sanitation' | 'water'; // Optional service field for admins
-  group: string;
+  roles: string[];
+  group?: string;
 }
 
 interface AuthContextType {
@@ -31,41 +31,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (data: { email: string; password: string }) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Login failed');
+      // Mock login - get user from localStorage (set by LoginPage)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const userData = JSON.parse(userStr);
+        setUser(userData);
       }
-
-      const userData = await response.json();
-
-      // Map backend role to frontend role
-      const roleMapping: { [key: string]: 'superadmin' | 'admin' | 'member' } = {
-        'SUPER_ADMIN': 'superadmin',
-        'ADMIN': 'admin',
-        'USER': 'member'
-      };
-
-      const mappedUser: User = {
-        id: userData.id.toString(),
-        fullName: userData.fullName,
-        email: userData.email,
-        telephone: '', // Not returned by backend, could be added later
-        district: userData.district,
-        sector: userData.sector,
-        role: roleMapping[userData.role] || 'member',
-        group: 'Default Group', // Could be added to backend later
-      };
-
-      setUser(mappedUser);
-
     } catch (error: any) {
       throw new Error(error.message || "Login failed");
     } finally {
@@ -74,28 +47,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 
   const signup = async (data: { fullName: string; email: string; telephone: string; district: string; sector: string; password: string }) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Signup failed');
-      }
-
-      // Signup successful, but don't auto-login
-      // User will need to login manually
-
+      // Mock signup - data already stored by SignUp page
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error: any) {
       throw new Error(error.message || "Signup failed");
     } finally {
@@ -106,22 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const googleSignup = async (data: { fullName: string; email: string }) => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/auth/oauth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Google signup failed');
-      }
-
-      // Signup successful, but don't auto-login
-      // User will need to login manually
-
+      // Mock Google signup
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error: any) {
       throw new Error(error.message || "Google signup failed");
     } finally {

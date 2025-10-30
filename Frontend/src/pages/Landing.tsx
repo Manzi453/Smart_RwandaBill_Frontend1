@@ -25,6 +25,8 @@ export const Landing = () => {
   const { t } = useTranslation();
   const [phoneNumber, setPhoneNumber] = useState("");
 
+  // Landing page - always show landing page on first visit
+
   const features = [
     {
       icon: Smartphone,
@@ -89,16 +91,14 @@ export const Landing = () => {
               <p className="text-xs text-muted-foreground">{t("smartCommunityBilling")}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
+            <LanguageSwitcher />
             <Button variant="ghost" asChild>
               <Link to="/login">{t("login")}</Link>
             </Button>
             <Button variant="gradient" asChild>
               <Link to="/signup">{t("signUp")}</Link>
             </Button>
-            <div className="ml-4">
-              <LanguageSwitcher />
-            </div>
           </div>
         </div>
       </header>
