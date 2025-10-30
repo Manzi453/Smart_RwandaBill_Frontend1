@@ -44,8 +44,4 @@ public class RwandabillApplication {
         };
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
 }
