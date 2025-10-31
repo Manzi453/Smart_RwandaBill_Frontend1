@@ -1,9 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { Users, Settings, Shield, TrendingUp, LogOut, Activity, Cog } from "lucide-react";
+import { Users, Settings, Shield, TrendingUp, LogOut, Activity, Cog, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { mockStatistics, mockUsers, mockBills } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
@@ -110,7 +110,7 @@ const SuperAdminDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              title={stat.tooltip}
+              title={stat.label}
             >
               <div className="flex justify-between items-start">
                 <div>

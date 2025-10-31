@@ -46,10 +46,10 @@ export default function RegisterPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Check for success messages in URL params
-  useEffect(() => {
+  React.useEffect(() => {
     const params = new URLSearchParams(location.search);
     const successMessage = params.get('success');
-    
+
     if (successMessage) {
       setSuccess(successMessage);
       // Clear the success message after 5 seconds
@@ -122,7 +122,7 @@ export default function RegisterPage() {
   };
 
   // Redirect if already authenticated
-  useEffect(() => {
+  React.useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
     }

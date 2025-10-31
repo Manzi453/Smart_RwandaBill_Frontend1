@@ -1,15 +1,17 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { Users, DollarSign, Clock, TrendingUp, LogOut, Activity, Search, Download } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockService, mockStatistics, mockBills, mockUsers } from "@/lib/mockData";
-import AdminNavbar from "../components/admin/AdminNavbar";
+import { mockStatistics, mockBills, mockUsers } from "@/lib/mockData";
+import AdminNavbar from "@/components/admin/AdminNavbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 // Animation variants
@@ -58,24 +60,28 @@ const AdminDashboard = () => {
       value: mockStatistics.activeUsers.toLocaleString(),
       change: "+5%",
       icon: Users,
+      tooltip: t("totalUsers") || "Total Users",
     },
     {
       label: t("pendingPayments") || "Pending Payments",
       value: mockStatistics.pendingBills.toString(),
       change: "-2%",
       icon: Clock,
+      tooltip: t("pendingPayments") || "Pending Payments",
     },
     {
       label: t("processedPayments") || "Processed Payments",
-      value: mockStatistics.paidBills.toLocaleString(),
+      value: mockStatistics.paidBills.toString(),
       change: "+12%",
       icon: TrendingUp,
+      tooltip: t("processedPayments") || "Processed Payments",
     },
     {
       label: t("revenue") || "Revenue",
       value: `${(mockStatistics.totalRevenue / 1000000).toFixed(1)}M RWF`,
       change: "+8%",
       icon: DollarSign,
+      tooltip: t("revenue") || "Revenue",
     }
   ];
 
@@ -167,7 +173,7 @@ const AdminDashboard = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, value }) => `${name} ${value.toFixed(1)}%`}
+                  label={({ name, value }) => `${name} ${Number(value).toFixed(1)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -175,7 +181,7 @@ const AdminDashboard = () => {
                   <Cell fill="#82ca9d" />
                   <Cell fill="#ffc658" />
                 </Pie>
-                <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+                <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
               </PieChart>
             </ResponsiveContainer>
           </motion.div>
@@ -245,7 +251,7 @@ const UsersSection = () => {
   const [statusFilter, setStatusFilter] = useState("all");
 
   const filteredUsers = mockUsers.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = user.firstName.toLowerCase().includes(search.toLowerCase()) || user.email.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || user.status.toLowerCase() === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -293,9 +299,9 @@ const UsersSection = () => {
                 {filteredUsers.length > 0 ? (
                   filteredUsers.map(user => (
                     <tr key={user.id} className="hover:bg-muted/30">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{user.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{user.firstName} {user.lastName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{user.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{user.phone}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{user.phoneNumber}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           user.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -442,10 +448,38 @@ const SettingsSection = () => {
 
 // Main Admin component
 const Admin = () => {
+  const [activeSection, setActiveSection] = useState("dashboard");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const renderActiveSection = () => {
+    switch (activeSection) {
+      case "dashboard":
+        return <AdminDashboard />;
+      case "users":
+        return <UsersSection />;
+      case "payments":
+        return <PaymentsSection />;
+      case "settings":
+        return <SettingsSection />;
+      default:
+        return <AdminDashboard />;
+    }
+  };
+
   return (
-    <AnimatePresence mode="wait">
-      <AdminDashboard />
-    </AnimatePresence>
+    <div className="flex h-screen bg-background">
+      <AdminNavbar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
+      />
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? "md:ml-20" : "md:ml-64"}`}>
+        <AnimatePresence mode="wait">
+          {renderActiveSection()}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 };
 
