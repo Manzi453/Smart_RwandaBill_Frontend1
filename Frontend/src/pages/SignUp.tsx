@@ -157,7 +157,7 @@ export default function SignUpPage() {
         navigate('/admin/dashboard');
       } else {
         navigate('/user/dashboard');
-      }
+      };
     } catch (error: any) {
       console.error('Signup error:', error);
       setError(error.message || 'An error occurred during signup. Please try again.');

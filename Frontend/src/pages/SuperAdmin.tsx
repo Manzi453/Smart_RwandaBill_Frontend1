@@ -90,7 +90,7 @@ const SuperAdminDashboard = () => {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-foreground">{t("systemOverview") || "System Overview"}</h1>
-            <p className="text-muted-foreground mt-2">{user?.username || 'SuperAdmin'} - {user?.email || 'admin@example.com'}</p>
+            <p className="text-muted-foreground mt-2">{user?.username || 'SuperAdmin'} - {user?.email || 'admin@example.com'} - ID: {user?.id || 'N/A'}</p>
             <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
               <Clock className="h-4 w-4" />
               {currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}

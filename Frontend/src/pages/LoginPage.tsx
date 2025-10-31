@@ -53,15 +53,23 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
+      // Check default password
+      if (data.password !== 'password123') {
+        setError('Invalid password. Please use the default password.');
+        toast.error('Invalid password');
+        setIsLoading(false);
+        return;
+      }
+
       // Simulate login delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Mock credentials for different user types
       let mockUser: any = null;
       const emailLower = data.emailOrPhone.toLowerCase();
-      
+
       // SuperAdmin credentials
       if (emailLower === 'superadmin@example.com' || emailLower === '+250788000000') {
         mockUser = {
@@ -114,11 +122,11 @@ export default function LoginPage() {
           sector: 'Nyarugenge'
         };
       }
-      
+
       // Store in localStorage
       localStorage.setItem('token', 'mock-token-' + Date.now());
       localStorage.setItem('user', JSON.stringify(mockUser));
-      
+
       toast.success('Login successful!');
       redirectBasedOnRole(mockUser.roles[0]);
     } catch (error: any) {
@@ -214,6 +222,9 @@ export default function LoginPage() {
                     className="pl-10 py-2 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition"
                   />
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Default password: password123
+                </p>
               </motion.div>
 
               {/* Error Message */}

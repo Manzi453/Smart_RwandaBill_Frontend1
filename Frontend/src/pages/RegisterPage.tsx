@@ -25,8 +25,7 @@ const registerSchema = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number'),
   confirmPassword: z.string(),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  firstName: z.string().min(1, 'Full name is required'),
   phoneNumber: z.string()
     .min(10, 'Please enter a valid phone number')
     .regex(/^[0-9+\-\s()]+$/, 'Please enter a valid phone number'),
@@ -73,7 +72,6 @@ export default function RegisterPage() {
       password: '',
       confirmPassword: '',
       firstName: '',
-      lastName: '',
       phoneNumber: '',
     },
   });
@@ -85,35 +83,36 @@ export default function RegisterPage() {
     setError(null);
     setSuccess(null);
     setIsSubmitting(true);
-    
+
     try {
       await signup({
         username: data.username,
         email: data.email,
-        password: data.password,
-        firstName: data.firstName,
-        lastName: data.lastName,
+        rech: data.password,
+        fullName: data.firstName, // Now using firstName as fullName
         phoneNumber: data.phoneNumber,
+        district: '', // Default empty, can be updated later
+        sector: '', // Default empty, can be updated later
       });
-      
+
       // Show success message
       setSuccess('Registration successful! Please check your email to verify your account.');
-      
+
       // Redirect to login after a delay
       setTimeout(() => {
-        navigate('/login', { 
-          state: { 
-            message: 'Registration successful! Please check your email to verify your account.' 
+        navigate('/login', {
+          state: {
+            message: 'Registration successful! Please check your email to verify your account.'
           },
           replace: true
         });
       }, 3000);
-      
+
     } catch (err: any) {
       console.error('Registration error:', err);
-      const errorMessage = err.response?.data?.message || 
-                         err.response?.data?.error || 
-                         err.message || 
+      const errorMessage = err.response?.data?.message ||
+                         err.response?.data?.error ||
+                         err.message ||
                          'Registration failed. Please try again.';
       setError(errorMessage);
     } finally {
@@ -173,38 +172,20 @@ export default function RegisterPage() {
             )}
             
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name *</Label>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    placeholder="John"
-                    disabled={isLoading || isSubmitting}
-                    {...register('firstName')}
-                    className={errors.firstName ? 'border-red-500' : ''}
-                    autoComplete="given-name"
-                  />
-                  {errors.firstName && (
-                    <p className="text-sm text-red-500 mt-1">{errors.firstName.message}</p>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    placeholder="Doe"
-                    disabled={isLoading || isSubmitting}
-                    {...register('lastName')}
-                    className={errors.lastName ? 'border-red-500' : ''}
-                    autoComplete="family-name"
-                  />
-                  {errors.lastName && (
-                    <p className="text-sm text-red-500 mt-1">{errors.lastName.message}</p>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name *</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="John Doe"
+                  disabled={isLoading || isSubmitting}
+                  {...register('firstName', { required: 'Full name is required' })}
+                  className={errors.firstName ? 'border-red-500' : ''}
+                  autoComplete="name"
+                />
+                {errors.firstName && (
+                  <p className="text-sm text-red-500 mt-1">{errors.firstName.message}</p>
+                )}
               </div>
               
               <div className="space-y-2">
