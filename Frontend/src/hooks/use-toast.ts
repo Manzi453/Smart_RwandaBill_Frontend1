@@ -1,10 +1,6 @@
 import * as React from "react";
 
-// Update the import path to the correct relative path
-// Update the import path below to the correct relative path where 'toast' is located.
-// For example, if 'toast' is in 'src/components/ui/toast.ts', use:
-import type { ToastActionElement, ToastProps } from "../../components/ui/toast";
-// If the file is elsewhere, adjust the path accordingly.
+import type { ToastActionElement, ToastProps } from "../components/ui/toast";
 
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;

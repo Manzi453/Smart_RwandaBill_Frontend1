@@ -14,8 +14,10 @@ import {
   Smartphone,
   Star,
 } from "lucide-react";
+// @ts-ignore
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+// @ts-ignore
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -24,8 +26,6 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 export const Landing = () => {
   const { t } = useTranslation();
   const [phoneNumber, setPhoneNumber] = useState("");
-
-  // Landing page - always show landing page on first visit
 
   const features = [
     {
@@ -91,14 +91,16 @@ export const Landing = () => {
               <p className="text-xs text-muted-foreground">{t("smartCommunityBilling")}</p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <LanguageSwitcher />
+          <div className="flex items-center space-x-3">
             <Button variant="ghost" asChild>
               <Link to="/login">{t("login")}</Link>
             </Button>
             <Button variant="gradient" asChild>
               <Link to="/signup">{t("signUp")}</Link>
             </Button>
+            <div className="ml-4">
+              <LanguageSwitcher />
+            </div>
           </div>
         </div>
       </header>

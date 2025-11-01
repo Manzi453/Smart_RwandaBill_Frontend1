@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { FcGoogle } from "react-icons/fc";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 declare global {
   interface Window {
@@ -45,10 +45,13 @@ const SECTORS = {
   Nyagatare: ["Nyagatare", "Rwimiyaga", "Tabagwe"],
 };
 
+const SERVICES = ["water", "sanitation", "security"];
+
 export default function SignUpPage() {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const { googleSignup } = useAuth();
 
   const [form, setForm] = useState({
     telephone: "",
@@ -57,6 +60,8 @@ export default function SignUpPage() {
     email: "",
     district: "",
     sector: "",
+    role: "member", // "member" or "admin"
+    service: "", // for admin accounts
   });
 
   // Read phone number from URL query parameter
@@ -80,160 +85,103 @@ export default function SignUpPage() {
     });
   };
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const getRoleFromEmail = (email: string): string[] => {
-    const emailLower = email.toLowerCase();
-    
-    // Check for super admin
-    if (emailLower === 'musanaivan453@gmail.com') {
-      return ['super_admin'];
-    }
-    
-    // Check for admin (water, sanitation, or security in email)
-    const adminKeywords = ['water', 'sanitation', 'security'];
-    const isAdmin = adminKeywords.some(keyword => emailLower.includes(keyword));
-    
-    return isAdmin ? ['admin'] : ['user'];
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     
+    // Generate service-based email for admin accounts
+    let submitData = { ...form };
+    if (form.role === "admin" && form.service) {
+      submitData.email = `admin${form.service}@example.com`;
+    }
+    
+    console.log("Sign up attempt:", submitData);
+
     try {
-      // Basic validation
-      if (!form.telephone || !form.password || !form.fullName || !form.email || !form.district || !form.sector) {
-        throw new Error('Please fill in all required fields');
-      }
+      const response = await fetch("http://localhost:8080/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(submitData),
+      });
 
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(form.email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      // Password validation
-      if (form.password.length < 6) {
-        throw new Error('Password must be at least 6 characters long');
-      }
-
-      setIsLoading(true);
-      
-      // Simulate signup delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Determine roles based on email
-      const roles = getRoleFromEmail(form.email);
-      
-      // Map roles to proper format
-      const roleMapping: { [key: string]: string } = {
-        'super_admin': 'ROLE_SUPERADMIN',
-        'admin': 'ROLE_ADMIN',
-        'user': 'ROLE_USER'
-      };
-      
-      // Mock signup - store user data in localStorage
-      const mockUser = {
-        id: Date.now().toString(),
-        username: form.fullName,
-        email: form.email,
-        telephone: form.telephone,
-        district: form.district,
-        sector: form.sector,
-        roles: roles.map(r => roleMapping[r] || 'ROLE_USER')
-      };
-
-      localStorage.setItem('token', 'mock-token-' + Date.now());
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
-      toast.success('Signup successful! Redirecting...');
-      
-      // Redirect based on role
-      if (roles.includes('super_admin')) {
-        navigate('/superadmin/dashboard');
-      } else if (roles.includes('admin')) {
-        navigate('/admin/dashboard');
+      if (response.ok) {
+        const result = await response.text();
+        alert("Signup successful: " + result);
+        navigate("/login"); // Redirect to login page
       } else {
-        navigate('/user/dashboard');
+        const error = await response.text();
+        alert("Signup failed: " + error);
       }
-    } catch (error: any) {
-      console.error('Signup error:', error);
-      setError(error.message || 'An error occurred during signup. Please try again.');
-      toast.error(error.message || 'Signup failed');
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Error during signup:", error);
+      alert("An error occurred during signup. Please try again.");
     }
   };
 
   const handleGoogleSignUp = async () => {
     console.log("Google sign up initiated");
-    
-    // Mock Google signup
-    try {
-      const mockUser = {
-        id: Date.now().toString(),
-        username: 'Google User',
-        email: 'googleuser@example.com',
-        roles: ['user']
-      };
 
-      localStorage.setItem('token', 'mock-token-' + Date.now());
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      
-      toast.success('Google signup successful! Redirecting...');
-      navigate('/user/dashboard');
-    } catch (error: any) {
-      console.error("Google signup failed:", error);
-      toast.error("Google signup failed");
+    // Initialize Google Identity Services
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: 'YOUR_GOOGLE_CLIENT_ID', // Replace with your actual Client ID
+        callback: async (response: any) => {
+          console.log("Google response:", response);
+
+          // Decode the JWT token to get user info
+          const userInfo = JSON.parse(atob(response.credential.split('.')[1]));
+          console.log("User info:", userInfo);
+
+          // Extract user data
+          const { name, email } = userInfo;
+
+          try {
+            await googleSignup({ fullName: name, email });
+            alert("Google signup successful! Please login.");
+            navigate("/login");
+          } catch (error: any) {
+            console.error("Google signup failed:", error);
+            alert("Google signup failed: " + error.message);
+          }
+        },
+      });
+
+      // Prompt the user to sign in
+      window.google.accounts.id.prompt();
+    } else {
+      alert("Google Identity Services not loaded.");
     }
   };
+
   const availableSectors = form.district
     ? SECTORS[form.district as keyof typeof SECTORS] || []
     : [];
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 px-4 relative overflow-hidden py-8"
+      className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-50 to-blue-200 px-4 py-8 relative"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -40 }}
+      transition={{ duration: 0.4 }}
     >
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="w-full max-w-md relative z-10"
-      >
-        {/* Logo Section */}
-        <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl mb-4 shadow-lg"
-          >
-            <span className="text-white font-bold text-2xl">RB</span>
-          </motion.div>
-          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-purple-200">Join Rwanda Bills today</p>
-        </div>
-
-        {/* Main Card */}
-        <Card className="shadow-2xl rounded-3xl overflow-hidden border-0 backdrop-blur-xl bg-white/95">
-          <CardContent className="p-8">
+      <div className="w-full max-w-md">
+        <Card className="shadow-lg rounded-2xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-bold text-blue-600">
+              {t("createAccount")}
+            </CardTitle>
+            <p className="text-sm text-gray-600 mt-2">
+              {t("joinRwandaBills")}
+            </p>
+          </CardHeader>
+          <CardContent className="p-6">
+            {/* Google Sign Up Button */}
             <Button
               type="button"
               variant="outline"
-              className="w-full mb-4"
+              className="w-full mb-6 border-gray-300"
               onClick={handleGoogleSignUp}
             >
               <FcGoogle className="mr-2 h-5 w-5" />
@@ -252,6 +200,54 @@ export default function SignUpPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Account Type */}
+              <div className="space-y-2">
+                <Label htmlFor="role">Account Type</Label>
+                <Select
+                  value={form.role}
+                  onValueChange={(value) =>
+                    handleSelectChange("role", value)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="member">Member</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Service Selection (only for admins) */}
+              {form.role === "admin" && (
+                <div className="space-y-2">
+                  <Label htmlFor="service">Service Department</Label>
+                  <Select
+                    value={form.service}
+                    onValueChange={(value) =>
+                      handleSelectChange("service", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SERVICES.map((service) => (
+                        <SelectItem key={service} value={service}>
+                          {service.charAt(0).toUpperCase() + service.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.service && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      Email will be: <strong>admin{form.service}@example.com</strong>
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Full Name */}
               <div className="space-y-2">
                 <Label htmlFor="fullName">{t("fullName")}</Label>
@@ -361,7 +357,7 @@ export default function SignUpPage() {
                   type="submit"
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                   size="lg"
-                  disabled={!form.district || !form.sector}
+                  disabled={!form.district || !form.sector || (form.role === "admin" && !form.service)}
                 >
                   {t("createAccount")}
                 </Button>
@@ -377,27 +373,22 @@ export default function SignUpPage() {
               </div>
             </form>
 
-            <p className="text-center text-gray-600 text-sm mt-6">
-              {t("alreadyHaveAccount")}{" "}
-              <Link
-                to="/login"
-                className="text-blue-600 font-medium hover:underline"
-              >
-                {t("signIn")}
-              </Link>
-            </p>
+              <p className="text-center text-gray-600 text-sm mt-6">
+                {t("alreadyHaveAccount")}{" "}
+                <Link
+                  to="/login"
+                  className="text-blue-600 font-medium hover:underline"
+                >
+                  {t("signIn")}
+                </Link>
+              </p>
 
             <p className="text-xs text-center text-gray-500 mt-4">
               {t("agreeToTerms")}
             </p>
           </CardContent>
         </Card>
-
-        {/* Footer Text */}
-        <p className="text-center text-purple-200 text-xs mt-6">
-          By signing up, you agree to our Terms of Service and Privacy Policy
-        </p>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

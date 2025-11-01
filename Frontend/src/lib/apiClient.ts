@@ -1,3 +1,4 @@
+// @ts-ignore
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getAuthToken, clearAuthToken, setAuthToken } from './auth';
 

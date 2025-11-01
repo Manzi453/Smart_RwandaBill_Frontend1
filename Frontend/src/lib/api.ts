@@ -2,42 +2,51 @@
 // TODO: Implement actual API calls
 
 export const getSuperAdminStats = async () => {
-  // Placeholder: Return mock stats for security and water payment
+  // Enhanced stats for platform oversight with Rwandan context
   return {
     totalUsers: 50000,
     totalBills: 150000,
     totalAdmins: 15,
     systemHealth: 99.9,
     securityIncidents: 2,
+    totalRevenue: 250000000, // in RWF
+    districtsCovered: 5, // Kigali, Northern, Southern, Eastern, Western
+    activeServices: 3, // Water, Sanitation, Security
+    monthlyGrowth: 8.5,
+    collectionRate: 94.2,
+    overdueAmount: 12500000, // in RWF
   };
 };
 
 export const getSuperAdminBillsChart = async () => {
-  // Placeholder: Return mock data for bills growth chart
+  // Placeholder: Return mock data for bills growth chart by service
   return [
-    { name: 'Jan', value: 12000 },
-    { name: 'Feb', value: 15000 },
-    { name: 'Mar', value: 18000 },
-    { name: 'Apr', value: 22000 },
-    { name: 'May', value: 25000 },
-    { name: 'Jun', value: 28000 },
+    { name: 'Jan', water: 12000, sanitation: 8000, security: 6000 },
+    { name: 'Feb', water: 15000, sanitation: 9500, security: 7000 },
+    { name: 'Mar', water: 18000, sanitation: 11000, security: 8000 },
+    { name: 'Apr', water: 22000, sanitation: 13000, security: 9000 },
+    { name: 'May', water: 25000, sanitation: 15000, security: 10000 },
+    { name: 'Jun', water: 28000, sanitation: 17000, security: 11000 },
   ];
 };
 
 export const getSuperAdminUsersChart = async () => {
-  // Placeholder: Return mock data for user distribution
+  // Placeholder: Return mock data for user distribution by Rwandan districts
   return [
-    { name: 'Active', value: 30000 },
-    { name: 'Inactive', value: 15000 },
-    { name: 'Suspended', value: 5000 },
+    { name: 'Kigali City', value: 15000 },
+    { name: 'Northern Province', value: 12000 },
+    { name: 'Southern Province', value: 10000 },
+    { name: 'Eastern Province', value: 8000 },
+    { name: 'Western Province', value: 5000 },
   ];
 };
 
 export const getSuperAdminAdminsChart = async () => {
-  // Placeholder: Return mock data for admin status
+  // Placeholder: Return mock data for admin status by service
   return [
-    { name: 'Active', value: 12 },
-    { name: 'Inactive', value: 3 },
+    { name: 'Water Service', value: 5 },
+    { name: 'Sanitation Service', value: 5 },
+    { name: 'Security Service', value: 5 },
   ];
 };
 
@@ -105,18 +114,30 @@ export const getAdminPaymentsChart = async (user?: { role: string; service?: str
   return allData;
 };
 
-export const getAdminPaymentStatusChart = async () => {
+export const getAdminPaymentStatusChart = async (user?: { role: string; service?: string }) => {
   // Placeholder: Return mock data for payment status distribution
-  return [
+  const allData = [
     { name: 'Paid', value: 1800 },
     { name: 'Pending', value: 400 },
     { name: 'Overdue', value: 100 },
   ];
+
+  // Filter data based on user role and service
+  if (user?.role === 'admin' && user.service) {
+    // For service-specific admins, scale down the values
+    const serviceMultiplier = user.service === 'security' ? 0.4 : user.service === 'water' ? 0.4 : 0.2;
+    return allData.map(item => ({
+      name: item.name,
+      value: Math.round(item.value * serviceMultiplier)
+    }));
+  }
+
+  return allData;
 };
 
-export const getAdminUserGrowthChart = async () => {
+export const getAdminUserGrowthChart = async (user?: { role: string; service?: string }) => {
   // Placeholder: Return mock data for user growth over time
-  return [
+  const allData = [
     { name: 'Jan', value: 1800 },
     { name: 'Feb', value: 1900 },
     { name: 'Mar', value: 2000 },
@@ -124,9 +145,20 @@ export const getAdminUserGrowthChart = async () => {
     { name: 'May', value: 2200 },
     { name: 'Jun', value: 2300 },
   ];
+
+  // Filter data based on user role and service
+  if (user?.role === 'admin' && user.service) {
+    const serviceMultiplier = user.service === 'security' ? 0.4 : user.service === 'water' ? 0.4 : 0.2;
+    return allData.map(item => ({
+      name: item.name,
+      value: Math.round(item.value * serviceMultiplier)
+    }));
+  }
+
+  return allData;
 };
 
-export const getAdminUsersList = async () => {
+export const getAdminUsersList = async (): Promise<{ id: number; name: string; email: string; lastPayment: string; status: string; }[]> => {
   // Placeholder: Return mock list of users
   return [
     { id: 1, name: 'Jean Baptiste', email: 'jean@example.com', lastPayment: '2024-06-15', status: 'Active' },
@@ -171,12 +203,20 @@ export const getAdminRecentActivities = async () => {
 
 // Placeholder API functions for User dashboard
 export const getUserStats = async (userId: string) => {
-  // Placeholder: Return mock stats for user dashboard
+  // Enhanced stats for user dashboard with bill management context
   return {
     totalPayments: 12,
     pendingPayments: 2,
     completedPayments: 10,
     totalAmount: 85000, // in RWF
+    overdueBills: 1,
+    upcomingBills: 3,
+    averagePaymentTime: 2, // days
+    serviceUsage: {
+      water: 85,
+      sanitation: 92,
+      security: 78
+    }
   };
 };
 
@@ -204,10 +244,138 @@ export const getUserPaymentHistory = async (userId: string) => {
 };
 
 export const getUserNotifications = async (userId: string) => {
-  // Placeholder: Return mock notifications for user
+  // Enhanced notifications for user with bill management context
   return [
-    { id: 1, title: 'Payment Due Soon', message: 'Your water bill payment is due in 3 days', type: 'warning', date: '2024-06-12' },
-    { id: 2, title: 'Payment Successful', message: 'Your security bill has been paid successfully', type: 'success', date: '2024-06-10' },
-    { id: 3, title: 'New Bill Available', message: 'Your sanitation bill for June is now available', type: 'info', date: '2024-06-01' },
+    { id: 1, title: 'Payment Due Soon', message: 'Your water bill payment is due in 3 days', type: 'warning', date: '2024-06-12', service: 'water' },
+    { id: 2, title: 'Payment Successful', message: 'Your security bill has been paid successfully', type: 'success', date: '2024-06-10', service: 'security' },
+    { id: 3, title: 'New Bill Available', message: 'Your sanitation bill for June is now available', type: 'info', date: '2024-06-01', service: 'sanitation' },
+    { id: 4, title: 'Overdue Payment', message: 'Your water bill from May is overdue. Please pay immediately to avoid penalties.', type: 'error', date: '2024-06-08', service: 'water' },
+    { id: 5, title: 'Auto-Payment Setup', message: 'Your auto-payment for security services has been activated', type: 'success', date: '2024-06-05', service: 'security' },
   ];
+};
+
+// New API functions for enhanced features
+
+// Bill Generation and Management
+export const generateBills = async (service: string, district?: string) => {
+  // Mock bill generation for a service
+  return {
+    generated: 1250,
+    service: service,
+    district: district || 'All Districts',
+    totalAmount: 6250000, // RWF
+    dueDate: '2024-07-15'
+  };
+};
+
+export const getBillDetails = async (billId: string) => {
+  // Mock bill details
+  return {
+    id: billId,
+    service: 'Water',
+    amount: 5000,
+    dueDate: '2024-07-15',
+    status: 'Pending',
+    usage: 25, // cubic meters
+    period: 'June 2024',
+    district: 'Kigali City',
+    sector: 'Gasabo'
+  };
+};
+
+// Payment Processing
+export const processPayment = async (paymentData: {
+  billId: string;
+  amount: number;
+  method: 'mobile_money' | 'bank_transfer' | 'card';
+  phoneNumber?: string;
+}) => {
+  // Mock payment processing
+  return {
+    success: true,
+    transactionId: 'TXN_' + Date.now(),
+    amount: paymentData.amount,
+    method: paymentData.method,
+    timestamp: new Date().toISOString(),
+    receiptUrl: '/receipts/' + paymentData.billId
+  };
+};
+
+// Admin Management
+export const createAdmin = async (adminData: {
+  fullName: string;
+  email: string;
+  service: 'water' | 'sanitation' | 'security';
+  district: string;
+}) => {
+  // Mock admin creation
+  return {
+    id: Date.now().toString(),
+    ...adminData,
+    role: 'admin',
+    status: 'active',
+    createdAt: new Date().toISOString()
+  };
+};
+
+export const getAdminList = async () => {
+  // Mock admin list
+  return [
+    { id: '1', fullName: 'Jean Baptiste Nkurunziza', email: 'jean.admin@example.com', service: 'water', district: 'Kigali City', status: 'active' },
+    { id: '2', fullName: 'Marie Claire Uwimana', email: 'marie.admin@example.com', service: 'sanitation', district: 'Northern Province', status: 'active' },
+    { id: '3', fullName: 'Paul Kagame', email: 'paul.admin@example.com', service: 'security', district: 'Southern Province', status: 'active' },
+  ];
+};
+
+// User Management for Admins
+export const updateUserStatus = async (userId: string, status: 'active' | 'inactive' | 'suspended') => {
+  // Mock user status update
+  return {
+    userId,
+    status,
+    updatedAt: new Date().toISOString()
+  };
+};
+
+export const sendUserNotification = async (userId: string, message: string, type: 'info' | 'warning' | 'error') => {
+  // Mock notification sending
+  return {
+    notificationId: Date.now().toString(),
+    userId,
+    message,
+    type,
+    sentAt: new Date().toISOString()
+  };
+};
+
+// Reports and Analytics
+export const getRevenueReport = async (startDate: string, endDate: string, service?: string) => {
+  // Mock revenue report
+  return {
+    period: { startDate, endDate },
+    service: service || 'All Services',
+    totalRevenue: 15000000, // RWF
+    totalTransactions: 2500,
+    averageTransaction: 6000,
+    breakdown: {
+      water: 8000000,
+      sanitation: 4000000,
+      security: 3000000
+    }
+  };
+};
+
+export const getOverduePaymentsReport = async (service?: string) => {
+  // Mock overdue payments report
+  return {
+    service: service || 'All Services',
+    totalOverdue: 12500000, // RWF
+    overdueCount: 250,
+    criticalCount: 45, // >30 days overdue
+    breakdown: [
+      { daysOverdue: '1-7', amount: 2000000, count: 80 },
+      { daysOverdue: '8-30', amount: 5000000, count: 125 },
+      { daysOverdue: '31+', amount: 5500000, count: 45 }
+    ]
+  };
 };
