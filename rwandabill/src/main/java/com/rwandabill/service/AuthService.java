@@ -65,7 +65,6 @@ public class AuthService {
     }
 
     @Transactional
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public AuthResponse signupAdmin(SignupRequest request) {
         // Check if admin already exists
         if (adminRepository.existsByEmail(request.getEmail())) {
@@ -107,7 +106,6 @@ public class AuthService {
     }
 
     @Transactional
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public AuthResponse signupSuperAdmin(SignupRequest request) {
         // Check if super admin already exists
         if (superAdminRepository.existsByEmail(request.getEmail())) {

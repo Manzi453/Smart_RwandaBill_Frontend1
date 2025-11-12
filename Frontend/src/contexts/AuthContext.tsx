@@ -20,12 +20,14 @@ interface AuthContextType {
     googleSignup: (data: { fullName: string; email: string }) => Promise<void>;
     isLoading: boolean;
     isAuthenticated: boolean;
+    token: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
     const [isLoading, setIsLoading] = useState(false);
 
     const login = async (data: { email: string; password: string }) => {
@@ -106,6 +108,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (defaultUsers[data.email] && defaultUsers[data.email].password === data.password) {
                 // Use default user
                 setUser(defaultUsers[data.email].user);
+                setToken('default-token'); // Fake token for default users
+                localStorage.setItem('authToken', 'default-token');
                 setIsLoading(false);
                 return;
             }
@@ -125,6 +129,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
 
             const userData = await response.json();
+
+            // Store the token
+            if (userData.token) {
+                setToken(userData.token);
+                localStorage.setItem('authToken', userData.token);
+            }
 
             // Map backend role to frontend role
             const roleMapping: { [key: string]: 'superadmin' | 'admin' | 'member' } = {
@@ -155,6 +165,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = () => {
         setUser(null);
+        setToken(null);
+        localStorage.removeItem('authToken');
     };
 
     const signup = async (data: { fullName: string; email: string; telephone: string; district: string; sector: string; password: string }) => {
@@ -210,7 +222,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, signup, googleSignup, isLoading, isAuthenticated: !!user }}>
+        <AuthContext.Provider value={{ user, login, logout, signup, googleSignup, isLoading, isAuthenticated: !!user, token }}>
             {children}
         </AuthContext.Provider>
     );

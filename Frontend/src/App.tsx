@@ -13,8 +13,8 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const RoleProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element; allowedRoles: string[] }) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -22,6 +22,10 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (!user || !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />; // Redirect to member dashboard if unauthorized
   }
 
   return children;
@@ -75,20 +79,22 @@ function AnimatedRoutes() {
         <Route
           path="/admin"
           element={
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Admin />
-            </motion.div>
+            <RoleProtectedRoute allowedRoles={["admin"]}>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Admin />
+              </motion.div>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute allowedRoles={["member"]}>
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -97,13 +103,13 @@ function AnimatedRoutes() {
               >
                 <User />
               </motion.div>
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/superadmin"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute allowedRoles={["superadmin"]}>
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -112,7 +118,7 @@ function AnimatedRoutes() {
               >
                 <SuperAdmin />
               </motion.div>
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
       </Routes>
