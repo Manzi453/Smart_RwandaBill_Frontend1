@@ -3,7 +3,7 @@ spring:
     name: rwandabill-backend
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/rwandabills
+    url: jdbc:postgresql://localhost:5432/rwandabill
     username: postgres
     password: root
     driver-class-name: org.postgresql.Driver
