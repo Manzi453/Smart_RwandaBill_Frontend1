@@ -1,4 +1,4 @@
-# Rwanda Bills Application Enhancement Plan
+ Rwanda Bills Application Enhancement Plan
 
 ## Super Admin Dashboard Enhancements
 - [x] Platform-wide Analytics Dashboard

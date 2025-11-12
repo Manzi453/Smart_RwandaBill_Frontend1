@@ -160,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const signup = async (data: { fullName: string; email: string; telephone: string; district: string; sector: string; password: string }) => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:8080/api/auth/signup', {
+            const response = await fetch('http://localhost:8083/api/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const googleSignup = async (data: { fullName: string; email: string }) => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:8080/api/auth/oauth/signup', {
+            const response = await fetch('http://localhost:8083/api/auth/oauth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,21 +1,19 @@
 package com.rwandabill.entity;
 
-import com.rwandabill.entity.ServiceType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "admins")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class AdminEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,11 +39,11 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserRole role = UserRole.USER; // Always USER for this entity
+    private UserRole role = UserRole.ADMIN; // Always ADMIN for this entity
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = true)
-    private ServiceType service;
+    @Column(nullable = false)
+    private ServiceType service; // Required for admins
 
     @Column(nullable = false)
     private Boolean isActive;
@@ -62,7 +60,7 @@ public class User {
         updatedAt = LocalDateTime.now();
         isActive = true;
         if (role == null) {
-            role = UserRole.USER;
+            role = UserRole.ADMIN;
         }
     }
 
