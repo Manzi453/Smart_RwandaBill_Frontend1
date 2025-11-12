@@ -34,6 +34,34 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/signup/admin")
+    public ResponseEntity<AuthResponse> signupAdmin(@Valid @RequestBody SignupRequest request) {
+        try {
+            AuthResponse response = authService.signupAdmin(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            log.error("Admin signup error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(AuthResponse.builder()
+                            .message(e.getMessage())
+                            .build());
+        }
+    }
+
+    @PostMapping("/signup/super-admin")
+    public ResponseEntity<AuthResponse> signupSuperAdmin(@Valid @RequestBody SignupRequest request) {
+        try {
+            AuthResponse response = authService.signupSuperAdmin(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            log.error("Super admin signup error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(AuthResponse.builder()
+                            .message(e.getMessage())
+                            .build());
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
