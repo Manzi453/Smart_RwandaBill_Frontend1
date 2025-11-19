@@ -328,17 +328,52 @@ const AdminDashboard = () => {
 };
 
 // Bill Generation Section
-const BillGenerationSection = () => {
+export const BillGenerationSection = () => {
+  console.log('BillGenerationSection rendering');
+  
   const { t } = useTranslation();
-  const [selectedService, setSelectedService] = useState("water");
-  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedService, setSelectedService] = useState<'water' | 'sanitation' | 'security'>('water');
+  const [selectedDistrict, setSelectedDistrict] = useState<string | undefined>(undefined);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastGenerated, setLastGenerated] = useState<{
+    service: string;
+    district: string | undefined;
+    count: number;
+    date: string;
+  } | null>(null);
 
   const handleGenerateBills = async () => {
+    setIsGenerating(true);
+    setError(null);
+    
     try {
-      const result = await generateBills(selectedService, selectedDistrict || undefined);
-      toast.success(`Generated ${result.generated} bills for ${result.service}`);
+      console.log('Generating bills with:', { selectedService, selectedDistrict });
+      if (!selectedService) {
+        throw new Error('Please select a service');
+      }
+      const result = await generateBills({ 
+        service: selectedService, 
+        district: selectedDistrict 
+      });
+      if (result) {
+        setLastGenerated({
+          service: result.service,
+          district: selectedDistrict,
+          count: result.generated,
+          date: new Date().toISOString()
+        });
+        toast.success(`Successfully generated ${result.generated} bills for ${result.service}${selectedDistrict ? ` in ${selectedDistrict}` : ''}`);
+      } else {
+        throw new Error('No response from server');
+      }
     } catch (error) {
-      toast.error("Failed to generate bills");
+      console.error('Error generating bills:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to generate bills';
+      setError(errorMessage);
+      toast.error(`Error: ${errorMessage}`);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -351,7 +386,10 @@ const BillGenerationSection = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="service">Service Type</Label>
-              <Select value={selectedService} onValueChange={setSelectedService}>
+              <Select 
+                value={selectedService} 
+                onValueChange={(value) => setSelectedService(value as 'water' | 'sanitation' | 'security')}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select service" />
                 </SelectTrigger>
@@ -365,25 +403,58 @@ const BillGenerationSection = () => {
 
             <div className="space-y-2">
               <Label htmlFor="district">District (Optional)</Label>
-              <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All districts" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All Districts</SelectItem>
-                  <SelectItem value="Kigali City">Kigali City</SelectItem>
-                  <SelectItem value="Northern Province">Northern Province</SelectItem>
-                  <SelectItem value="Southern Province">Southern Province</SelectItem>
-                  <SelectItem value="Eastern Province">Eastern Province</SelectItem>
-                  <SelectItem value="Western Province">Western Province</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex flex-col space-y-2">
+                <Select 
+                  value={selectedDistrict || ''}
+                  onValueChange={(value) => setSelectedDistrict(value || undefined)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a district" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Kigali City">Kigali City</SelectItem>
+                    <SelectItem value="Northern Province">Northern Province</SelectItem>
+                    <SelectItem value="Southern Province">Southern Province</SelectItem>
+                    <SelectItem value="Eastern Province">Eastern Province</SelectItem>
+                    <SelectItem value="Western Province">Western Province</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setSelectedDistrict(undefined)}
+                  className="w-full"
+                >
+                  Clear Selection (All Districts)
+                </Button>
+              </div>
             </div>
           </div>
 
-          <Button onClick={handleGenerateBills} className="w-full md:w-auto">
-            Generate Bills
-          </Button>
+          <div className="space-y-4">
+            <Button 
+              onClick={handleGenerateBills} 
+              className="w-full md:w-auto"
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generating...
+                </>
+              ) : (
+                'Generate Bills'
+              )}
+            </Button>
+            {error && (
+              <div className="text-red-500 text-sm mt-2">
+                {error}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AnimatedPage>
@@ -629,21 +700,46 @@ const SettingsSection = () => {
 const Admin = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { user } = useAuth();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('Current active section:', activeSection);
+    console.log('User role:', user?.role);
+  }, [activeSection, user?.role]);
 
   const renderSection = () => {
-    const { user } = useAuth();
-    
-    // Use new ServiceAdminDashboard for service admins
-    if (user?.role === "admin" && activeSection === "dashboard") {
-      return (
-        <AnimatedPage>
-          <div className="p-6">
-            <ServiceAdminDashboard onSectionChange={setActiveSection} />
-          </div>
-        </AnimatedPage>
-      );
+    // Handle service admin sections
+    if (user?.role === "admin") {
+      switch (activeSection) {
+        case "dashboard":
+          return (
+            <AnimatedPage>
+              <div className="p-6">
+                <ServiceAdminDashboard onSectionChange={setActiveSection} />
+              </div>
+            </AnimatedPage>
+          );
+        case "bill-generation":
+          return <BillGenerationSection />;
+        case "users":
+          return <UsersSection />;
+        case "payments":
+          return <PaymentsSection />;
+        case "settings":
+          return <SettingsSection />;
+        default:
+          return (
+            <AnimatedPage>
+              <div className="p-6">
+                <ServiceAdminDashboard onSectionChange={setActiveSection} />
+              </div>
+            </AnimatedPage>
+          );
+      }
     }
     
+    // Handle other user roles (superadmin, etc.)
     switch (activeSection) {
       case "dashboard":
         return <AdminDashboard />;

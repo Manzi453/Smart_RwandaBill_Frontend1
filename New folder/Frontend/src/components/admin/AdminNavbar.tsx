@@ -4,27 +4,28 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import {
-  User,
-  Menu,
-  X,
-  ChevronLeft,
-  ChevronRight,
-  BarChart3,
-  Users,
-  DollarSign,
-  FileText,
-  LogOut,
-  Droplets,
-  Shield,
-  Trash2,
-  Bell,
-  AlertCircle,
-  TrendingUp,
+    User,
+    Menu,
+    X,
+    ChevronLeft,
+    ChevronRight,
+    BarChart3,
+    Users,
+    DollarSign,
+    FileText,
+    LogOut,
+    Droplets,
+    Shield,
+    Trash2,
+    Bell,
+    AlertCircle,
+    TrendingUp,
+    Receipt, Settings,
 } from "lucide-react";
-import { NavbarQuickAccess } from "../NavbarQuickAccess";
 
 interface AdminNavbarProps {
   activeSection: string;
+
   onSectionChange: (section: string) => void;
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
@@ -75,10 +76,16 @@ const AdminNavbar = ({
 
   const navItems = [
     { id: "dashboard", label: t('dashboard'), icon: BarChart3 },
-    { id: "bill-generation", label: "Bill Generation", icon: FileText },
+    { id: "bill-generation", label: "Bill Generation", icon: Receipt },
     { id: "users", label: t('users'), icon: Users },
     { id: "payments", label: t('payments'), icon: DollarSign },
+    { id: "settings", label: t('settings'), icon: Settings },
   ];
+  
+  // Log navigation changes for debugging
+  React.useEffect(() => {
+    console.log('Active section changed to:', activeSection);
+  }, [activeSection]);
 
   const quickAccessItems = [
     {
@@ -179,7 +186,7 @@ const AdminNavbar = ({
           </nav>
 
           {/* Quick Access Section */}
-          <NavbarQuickAccess items={quickAccessItems} isCollapsed={isCollapsed} />
+
 
           {/* Logout Button */}
           <motion.div 
@@ -245,15 +252,16 @@ const AdminNavbar = ({
                 <motion.button
                   key={item.id}
                   onClick={() => {
+                    console.log('Navigating to:', item.id);
                     onSectionChange(item.id);
                     setIsMobileMenuOpen(false);
-                  }}
+                  }} 
                   className={`w-full flex items-center px-3 py-2 rounded-md text-base font-medium transition-all ${
                     activeSection === item.id
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   }`}
-                  whileHover={{ scale: 1.02 }}
+
                   whileTap={{ scale: 0.98 }}
                 >
                   <item.icon className="h-5 w-5 mr-3" />

@@ -15,7 +15,6 @@ import {
     CreditCard,
     FileText,
 } from "lucide-react";
-import { NavbarQuickAccess } from "../NavbarQuickAccess";
 
 interface UserNavbarProps {
     activeSection: string;

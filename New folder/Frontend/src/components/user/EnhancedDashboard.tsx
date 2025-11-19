@@ -297,4 +297,6 @@ export const EnhancedDashboard = () => {
                     </AnimatePresence>
                 </Tabs>
             </motion.div>
-     
+        </div>
+    );
+}

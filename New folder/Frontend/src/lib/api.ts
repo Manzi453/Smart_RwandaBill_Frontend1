@@ -257,15 +257,236 @@ export const getUserNotifications = async (userId: string) => {
 // New API functions for enhanced features
 
 // Bill Generation and Management
-export const generateBills = async (service: string, district?: string) => {
-  // Mock bill generation for a service
-  return {
-    generated: 1250,
-    service: service,
-    district: district || 'All Districts',
-    totalAmount: 6250000, // RWF
-    dueDate: '2024-07-15'
+export interface BillGenerationResult {
+  generated: number;
+  service: string;
+  district: string;
+  totalAmount: number;
+  dueDate: string;
+  details: {
+    serviceType: string;
+    rate?: number;
+    quantity?: number;
+    fixedCharge?: number;
+    propertyType?: string;
+    wasteType?: string;
+    collectionFrequency?: string;
+    serviceLevel?: string;
+    numberOfGuards?: number;
+    dailyPatrols?: number;
   };
+}
+
+interface GenerateBillsParams {
+  service: 'water' | 'sanitation' | 'security';
+  district?: string;
+  consumption?: number;
+  rate?: number;
+  fixedCharge?: number;
+  propertyType?: string;
+  wasteType?: string;
+  collectionFrequency?: string;
+  serviceLevel?: string;
+  guards?: number;
+  patrols?: number;
+}
+
+// Types for service data
+interface WaterServiceData {
+  baseGenerated: number;
+  baseAmount: number;
+  rate: number;
+  fixedCharge: number;
+}
+
+interface SanitationServiceData {
+  baseGenerated: number;
+  baseAmount: number;
+  rates: {
+    residential: { general: number; hazardous: number; recyclable: number };
+    commercial: { general: number; hazardous: number; recyclable: number };
+    industrial: { general: number; hazardous: number; recyclable: number };
+  };
+  frequencyMultiplier: {
+    daily: number;
+    weekly: number;
+    biweekly: number;
+    monthly: number;
+  };
+}
+
+interface SecurityServiceData {
+  baseGenerated: number;
+  baseAmount: number;
+  serviceLevels: {
+    basic: { rate: number; guards: number; patrols: number };
+    standard: { rate: number; guards: number; patrols: number };
+    premium: { rate: number; guards: number; patrols: number };
+  };
+}
+
+type ServiceData = WaterServiceData | SanitationServiceData | SecurityServiceData;
+
+interface MockBillData {
+  water: WaterServiceData;
+  sanitation: SanitationServiceData;
+  security: SecurityServiceData;
+  [key: string]: ServiceData; // Index signature for dynamic access
+}
+
+// Mock data for bill generation
+const MOCK_BILL_DATA: MockBillData = {
+  water: {
+    baseGenerated: 1500,
+    baseAmount: 7500000,
+    rate: 500, // RWF per m³
+    fixedCharge: 2000 // RWF
+  },
+  sanitation: {
+    baseGenerated: 1200,
+    baseAmount: 4800000,
+    rates: {
+      residential: { general: 5000, hazardous: 15000, recyclable: 2000 },
+      commercial: { general: 10000, hazardous: 30000, recyclable: 5000 },
+      industrial: { general: 20000, hazardous: 50000, recyclable: 10000 }
+    },
+    frequencyMultiplier: {
+      daily: 4,
+      weekly: 1,
+      biweekly: 0.5,
+      monthly: 0.25
+    }
+  },
+  security: {
+    baseGenerated: 1000,
+    baseAmount: 10000000,
+    serviceLevels: {
+      basic: { rate: 5000, guards: 1, patrols: 2 },
+      standard: { rate: 8000, guards: 2, patrols: 4 },
+      premium: { rate: 15000, guards: 3, patrols: 6 }
+    }
+  }
+};
+
+// Type guard to check if service data is for water
+const isWaterService = (data: ServiceData): data is WaterServiceData => {
+  return 'rate' in data && 'fixedCharge' in data;
+};
+
+// Type guard to check if service data is for sanitation
+const isSanitationService = (data: ServiceData): data is SanitationServiceData => {
+  return 'rates' in data && 'frequencyMultiplier' in data;
+};
+
+// Type guard to check if service data is for security
+const isSecurityService = (data: ServiceData): data is SecurityServiceData => {
+  return 'serviceLevels' in data;
+};
+
+export const generateBills = async (params: GenerateBillsParams): Promise<BillGenerationResult> => {
+  try {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const { service, district } = params;
+    const serviceData = MOCK_BILL_DATA[service];
+    let generated = serviceData.baseGenerated;
+    let totalAmount = serviceData.baseAmount;
+    
+    // Define bill details with all possible properties
+    type BillDetails = {
+      serviceType: 'water' | 'sanitation' | 'security';
+      rate?: number;
+      consumption?: number;
+      fixedCharge?: number;
+      propertyType?: string;
+      wasteType?: string;
+      collectionFrequency?: string;
+      baseRate?: number;
+      frequencyMultiplier?: number;
+      serviceLevel?: string;
+      numberOfGuards?: number;
+      dailyPatrols?: number;
+      ratePerGuard?: number;
+    };
+
+    // Initialize details with service type
+    const details: BillDetails = { serviceType: service };
+
+    // Calculate bills based on service type and parameters
+    switch (service) {
+      case 'water': {
+        if (!isWaterService(serviceData)) {
+          throw new Error('Invalid service data for water service');
+        }
+        const consumption = params.consumption || 0;
+        const rate = params.rate || serviceData.rate;
+        const fixedCharge = params.fixedCharge || serviceData.fixedCharge;
+        totalAmount = Math.round(consumption * rate + fixedCharge);
+        details.rate = rate;
+        details.consumption = consumption;
+        details.fixedCharge = fixedCharge;
+        break;
+      }
+
+      case 'sanitation': {
+        if (!isSanitationService(serviceData)) {
+          throw new Error('Invalid service data for sanitation service');
+        }
+        const propertyType = (params.propertyType as keyof SanitationServiceData['rates']) || 'residential';
+        const wasteType = (params.wasteType as keyof SanitationServiceData['rates'][typeof propertyType]) || 'general';
+        const frequency = (params.collectionFrequency as keyof SanitationServiceData['frequencyMultiplier']) || 'weekly';
+        
+        const baseRate = serviceData.rates[propertyType]?.[wasteType] || 5000;
+        const frequencyMultiplier = serviceData.frequencyMultiplier[frequency] || 1;
+        
+        totalAmount = Math.round(baseRate * frequencyMultiplier);
+        
+        // Assign properties with proper typing
+        Object.assign(details, {
+          wasteType,
+          collectionFrequency: frequency,
+          baseRate,
+          frequencyMultiplier
+        });
+        break;
+      }
+
+      case 'security': {
+        if (!isSecurityService(serviceData)) {
+          throw new Error('Invalid service data for security service');
+        }
+        const serviceLevel = (params.serviceLevel as keyof SecurityServiceData['serviceLevels']) || 'standard';
+        const levelData = serviceData.serviceLevels[serviceLevel] || serviceData.serviceLevels.standard;
+        const guards = params.guards || levelData.guards;
+        const patrols = params.patrols || levelData.patrols;
+
+        totalAmount = Math.round(levelData.rate * guards * 1.2); // 20% premium for patrols
+        details.serviceLevel = serviceLevel;
+        details.numberOfGuards = guards;
+        details.dailyPatrols = patrols;
+        details.ratePerGuard = levelData.rate;
+        break;
+      }
+    }
+    
+    // Adjust generated count based on district (if specified)
+    if (district && district !== 'All Districts') {
+      generated = Math.round(generated * 0.2); // Assuming each district has about 20% of total users
+    }
+
+    return {
+      generated,
+      service,
+      district: district || 'All Districts',
+      totalAmount,
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+      details
+    };
+  } catch (error) {
+    console.error('Error in generateBills:', error);
+    throw new Error('Failed to generate bills. Please try again later.');
+  }
 };
 
 export const getBillDetails = async (billId: string) => {
