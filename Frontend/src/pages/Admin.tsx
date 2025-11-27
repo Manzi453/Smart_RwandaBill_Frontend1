@@ -1,19 +1,97 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { Users, DollarSign, Clock, TrendingUp, Loader2, Activity, Download } from "lucide-react";
-import { getAdminStats, getAdminPaymentsChart, getAdminPaymentStatusChart, getAdminUserGrowthChart, getAdminUsersList, getAdminPaymentsList, getAdminRecentActivities, generateBills } from "@/lib/api";
+import { Users, DollarSign, Clock, TrendingUp, Loader2, Activity, Download, Plus, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import AdminNavbar from "../components/admin/AdminNavbar";
-import { ServiceAdminDashboard } from "../components/admin/ServiceAdminDashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { mockApi, Bill, User, mockQueryClientConfig } from "@/mocks/mockData";
+
+// Mock data generation functions
+const generateMockStats = (user: any, t: any) => {
+  const baseStats = {
+    totalUsers: 1245,
+    activeUsers: 876,
+    totalRevenue: 12500000,
+    pendingPayments: 2450000,
+    recentActivities: [
+      { 
+        id: 1, 
+        action: t('activityLogs.newUserRegistration'), 
+        user: 'John Doe', 
+        time: t('activityLogs.timeAgo', { count: 2, unit: 'minute' }),
+        _translationKey: 'activityLogs.newUserRegistration'
+      },
+      { 
+        id: 2, 
+        action: t('activityLogs.paymentReceived'), 
+        user: 'Jane Smith', 
+        amount: 50000, 
+        time: t('activityLogs.timeAgo', { count: 15, unit: 'minute' }),
+        _translationKey: 'activityLogs.paymentReceived'
+      },
+      { 
+        id: 3, 
+        action: t('activityLogs.billGenerated'), 
+        user: 'Water Department', 
+        count: 45, 
+        time: t('activityLogs.timeAgo', { count: 1, unit: 'hour' }),
+        _translationKey: 'activityLogs.billGenerated'
+      },
+    ]
+  };
+
+  if (user?.service) {
+    // Service-specific stats
+    return {
+      ...baseStats,
+      totalUsers: 345,
+      activeUsers: 287,
+      totalRevenue: 4500000,
+      pendingPayments: 780000,
+    };
+  }
+
+  return baseStats;
+};
+
+const generateMockCharts = (user: any, t: any) => {
+  const months = [
+    t('date.months.jan'), t('date.months.feb'), t('date.months.mar'), t('date.months.apr'),
+    t('date.months.may'), t('date.months.jun'), t('date.months.jul'), t('date.months.aug'),
+    t('date.months.sep'), t('date.months.oct'), t('date.months.nov'), t('date.months.dec')
+  ];
+  const currentMonth = new Date().getMonth();
+  
+  const paymentsData = months.map((month, index) => ({
+    name: month,
+    amount: Math.floor(Math.random() * 1000000) + 500000,
+    count: Math.floor(Math.random() * 50) + 20,
+  }));
+
+  const paymentStatusData = [
+    { name: t('admin.payments.statuses.paid'), value: 65 },
+    { name: t('admin.payments.statuses.pending'), value: 25 },
+    { name: t('admin.payments.statuses.overdue'), value: 10 },
+  ];
+
+  const userGrowthData = months.slice(0, currentMonth + 1).map((month, index) => ({
+    name: month,
+    users: Math.floor(Math.random() * 50) + 20 * (index + 1),
+  }));
+
+  return {
+    paymentsData,
+    paymentStatusData,
+    userGrowthData,
+  };
+};
 
 // Animation variants
 const pageVariants = {
@@ -39,61 +117,84 @@ const AdminDashboard = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  const { data: stats, error: statsError } = useQuery({
+  const queryClient = useQueryClient();
+
+  // Mock data queries
+  const { data: stats } = useQuery({
     queryKey: ['adminStats', user?.role, user?.service],
-    queryFn: async () => await getAdminStats(user!),
+    queryFn: () => Promise.resolve(generateMockStats(user, t)),
+    ...mockQueryClientConfig.defaultOptions.queries,
   });
 
-  const { data: paymentsChart, isLoading: paymentsLoading } = useQuery({
-    queryKey: ['adminPaymentsChart', user?.role, user?.service],
-    queryFn: async () => await getAdminPaymentsChart(user!),
+  const { data: chartsData, isLoading: chartsLoading } = useQuery({
+    queryKey: ['adminCharts', user?.role, user?.service],
+    queryFn: () => Promise.resolve(generateMockCharts(user, t)),
+    ...mockQueryClientConfig.defaultOptions.queries,
   });
 
-  const { data: paymentStatusChart, isLoading: statusLoading } = useQuery({
-    queryKey: ['adminPaymentStatusChart'],
-    queryFn: () => getAdminPaymentStatusChart(),
+  // Using users and bills from earlier queries
+  const recentActivities = stats?.recentActivities || [];
+
+  // Mock mutation for updating user status
+  const { mutate: updateUserStatus } = useMutation({
+    mutationFn: async ({ userId, approved }: { userId: string; approved: boolean }) => {
+      return mockApi.updateUser(userId, { approved });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      toast.success('User status updated');
+    },
   });
 
-  const { data: userGrowthChart, isLoading: growthLoading } = useQuery({
-    queryKey: ['adminUserGrowthChart'],
-    queryFn: () => getAdminUserGrowthChart(),
+  // Mock mutation for marking bill as paid
+  const { mutate: markBillAsPaid } = useMutation({
+    mutationFn: async (billId: string) => {
+      return mockApi.updateBill(billId, { 
+        status: 'paid',
+        paymentDate: new Date().toISOString(),
+        paymentMethod: 'manual',
+        referenceNumber: `PAY-${Date.now()}`
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminBills'] });
+      toast.success('Bill marked as paid');
+    },
   });
 
-  const { data: recentActivities, isLoading: activitiesLoading } = useQuery({
-    queryKey: ['adminRecentActivities'],
-    queryFn: () => getAdminRecentActivities(),
-  });
+  // Using chartsData from the earlier query
+  const { paymentsData, paymentStatusData, userGrowthData } = chartsData || {};
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   const statCards = [
     {
-      label: t("totalUsers"),
-      value: stats ? stats.totalUsers.toLocaleString() : t("loading"),
+      label: "Total Users",
+      value: stats ? stats.totalUsers.toLocaleString() : "Loading...",
       change: "+5%",
       icon: Users,
-      tooltip: t("totalUsersTooltip")
+      tooltip: "Total number of registered users"
     },
     {
-      label: t("pendingPayments"),
-      value: stats ? stats.pendingPayments.toString() : t("loading"),
+      label: "Pending Payments",
+      value: stats ? `${stats.pendingPayments.toLocaleString()} RWF` : "Loading...",
       change: "-2%",
       icon: Clock,
-      tooltip: t("pendingPaymentsTooltip")
+      tooltip: "Total amount of pending payments"
     },
     {
-      label: t("processedPayments"),
-      value: stats ? stats.processedPayments.toLocaleString() : t("loading"),
+      label: "Active Users",
+      value: stats ? stats.activeUsers.toLocaleString() : "Loading...",
       change: "+12%",
       icon: TrendingUp,
-      tooltip: t("processedPaymentsTooltip")
+      tooltip: "Number of active users this month"
     },
     {
-      label: t("revenue"),
-      value: stats ? `${stats.revenue.toLocaleString()} RWF` : t("loading"),
+      label: "Total Revenue",
+      value: stats ? `${stats.totalRevenue.toLocaleString()} RWF` : "Loading...",
       change: "+8%",
       icon: DollarSign,
-      tooltip: t("revenueTooltip")
+      tooltip: "Total revenue collected"
     }
   ];
 
@@ -325,59 +426,113 @@ const AdminDashboard = () => {
 
 // Bill Generation Section
 const BillGenerationSection = () => {
-  const [selectedService, setSelectedService] = useState("water");
+  const [selectedService, setSelectedService] = useState<"water" | "sanitation" | "security">("water");
   const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleGenerateBills = async () => {
+    if (!selectedService) {
+      toast.error("Please select a service");
+      return;
+    }
+
+    setIsGenerating(true);
+    
     try {
-      const result = await generateBills(selectedService, selectedDistrict || undefined);
-      toast.success(`Generated ${result.generated} bills for ${result.service}`);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Generate mock bills
+      const districts = selectedDistrict 
+        ? [selectedDistrict] 
+        : ["Kigali", "Gasabo", "Kicukiro", "Nyarugenge", "Rubavu", "Musanze"];
+      
+      const mockBills = districts.flatMap(district => {
+        const count = Math.floor(Math.random() * 10) + 5; // 5-15 bills per district
+        return Array.from({ length: count }, (_, i) => ({
+          id: `bill-${Date.now()}-${i}`,
+          customerName: `Customer ${Math.floor(Math.random() * 1000)}`,
+          amount: Math.floor(Math.random() * 50000) + 10000, // 10,000 - 60,000 RWF
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+          status: 'pending',
+          service: selectedService,
+          customerId: `cust-${Math.floor(Math.random() * 1000)}`,
+          district,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }));
+      });
+
+      // In a real app, you would send these to your API
+      console.log(`Generated ${mockBills.length} mock bills for ${selectedService}`, mockBills);
+      
+      // Update the UI by invalidating the bills query
+      queryClient.invalidateQueries({ queryKey: ['adminBills'] });
+      
+      toast.success(`Successfully generated ${mockBills.length} bills for ${selectedService}`);
     } catch (error) {
-      toast.error("Failed to generate bills");
+      console.error("Error generating bills:", error);
+      toast.error("Failed to generate bills. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
   };
+
+  const { t } = useTranslation();
 
   return (
     <AnimatedPage>
       <div className="p-6 space-y-6">
-        <h1 className="text-3xl font-bold text-foreground">Bill Generation</h1>
+        <h1 className="text-3xl font-bold text-foreground">{t('admin.billGeneration.title')}</h1>
 
         <div className="bg-card rounded-xl shadow-soft border p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="service">Service Type</Label>
+              <Label htmlFor="service">{t('admin.billGeneration.serviceType')}</Label>
               <Select value={selectedService} onValueChange={setSelectedService}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select service" />
+                  <SelectValue placeholder={t('admin.billGeneration.selectService')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="water">Water</SelectItem>
-                  <SelectItem value="sanitation">Sanitation</SelectItem>
-                  <SelectItem value="security">Security</SelectItem>
+                  <SelectItem value="water">{t('services.water')}</SelectItem>
+                  <SelectItem value="sanitation">{t('services.sanitation')}</SelectItem>
+                  <SelectItem value="security">{t('services.security')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="district">District (Optional)</Label>
+              <Label htmlFor="district">{t('admin.billGeneration.district')} ({t('common.optional')})</Label>
               <Select value={selectedDistrict} onValueChange={setSelectedDistrict}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All districts" />
+                  <SelectValue placeholder={t('admin.billGeneration.allDistricts')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Districts</SelectItem>
-                  <SelectItem value="Kigali City">Kigali City</SelectItem>
-                  <SelectItem value="Northern Province">Northern Province</SelectItem>
-                  <SelectItem value="Southern Province">Southern Province</SelectItem>
-                  <SelectItem value="Eastern Province">Eastern Province</SelectItem>
-                  <SelectItem value="Western Province">Western Province</SelectItem>
+                  <SelectItem value="">{t('admin.billGeneration.allDistricts')}</SelectItem>
+                  <SelectItem value="Kigali City">{t('districts.kigali')}</SelectItem>
+                  <SelectItem value="Northern Province">{t('districts.north')}</SelectItem>
+                  <SelectItem value="Southern Province">{t('districts.south')}</SelectItem>
+                  <SelectItem value="Eastern Province">{t('districts.east')}</SelectItem>
+                  <SelectItem value="Western Province">{t('districts.west')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <Button onClick={handleGenerateBills} className="w-full md:w-auto">
-            Generate Bills
+          <Button 
+            onClick={handleGenerateBills} 
+            className="w-full md:w-auto"
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('common.generating')}
+              </>
+            ) : (
+              t('admin.billGeneration.generateBills')
+            )}
           </Button>
         </div>
       </div>
@@ -490,24 +645,83 @@ const UsersSection = () => {
 const PaymentsSection = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { data: payments, isLoading } = useQuery({
-    queryKey: ['adminPaymentsList', user?.role, user?.service],
-    queryFn: () => getAdminPaymentsList(user!),
+  const queryClient = useQueryClient();
+  
+  // Use mock data for payments
+  const { data: payments = [], isLoading } = useQuery<Bill[]>({
+    queryKey: ['adminBills'],
+    queryFn: mockApi.getBills,
+    select: (bills) => 
+      bills.map(bill => ({
+        ...bill,
+        referenceNumber: `PAY-${Math.floor(100000 + Math.random() * 900000)}`,
+        paymentDate: bill.status === 'paid' ? bill.paymentDate : undefined,
+        paymentMethod: bill.status === 'paid' ? (['mobile_money', 'card', 'bank_transfer'] as const)[Math.floor(Math.random() * 3)] : undefined,
+      })),
+    ...mockQueryClientConfig.defaultOptions.queries,
   });
 
-  const handleExport = () => {
-    toast.success(t("exportStarted"));
-    // Mock export
+  // Mock function to process payment
+  const processPayment = async (billId: string) => {
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the payment status
+      await mockApi.updateBill(billId, { 
+        status: 'paid',
+        paymentDate: new Date().toISOString(),
+        paymentMethod: 'manual',
+        referenceNumber: `PAY-${Math.floor(100000 + Math.random() * 900000)}`
+      });
+      
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['adminBills'] });
+      toast.success('Payment processed successfully');
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      toast.error('Failed to process payment');
+    }
   };
 
+  const handleExport = () => {
+    // Create CSV content
+    const headers = ['ID', 'Customer', 'Service', 'Amount', 'Status', 'Due Date'];
+    const csvContent = [
+      headers.join(','),
+      ...payments.map(payment => [
+        payment.id,
+        payment.customerName,
+        payment.service,
+        payment.amount,
+        payment.status,
+        payment.dueDate
+      ].map(field => `"${field}"`).join(','))
+    ].join('\n');
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `payments_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Export started. Download should begin shortly.');
+  };
+
+  const { t } = useTranslation();
+  
   return (
     <AnimatedPage>
       <div className="p-6 space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">{t("paymentsManagement")}</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('admin.payments.title')}</h1>
           <Button onClick={handleExport} className="flex items-center gap-2">
             <Download className="h-4 w-4" />
-            {t("export")}
+            {t('common.export')}
           </Button>
         </div>
 
@@ -516,12 +730,24 @@ const PaymentsSection = () => {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("user")}</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("service")}</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("amount")}</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("status")}</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("date")}</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("actions")}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {t('admin.payments.customer')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {t('common.service')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {t('admin.payments.amount')} (RWF)
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {t('common.status')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {t('admin.payments.dueDate')}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {t('common.actions')}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -530,6 +756,68 @@ const PaymentsSection = () => {
                     <tr key={i}>
                       <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-24"></div></td>
                       <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-16"></div></td>
+                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-20"></div></td>
+                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-16"></div></td>
+                      <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-24"></div></td>
+                      <td className="px-6 py-4"><div className="animate-pulse h-8 bg-muted rounded w-16"></div></td>
+                    </tr>
+                  ))
+                ) : payments.length > 0 ? (
+                  payments.map((payment) => (
+                    <tr key={payment.id} className="hover:bg-muted/30">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
+                        {payment.customerName || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground capitalize">
+                        {payment.service}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {payment.amount?.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span 
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            payment.status === 'paid' 
+                              ? 'bg-green-100 text-green-800' 
+                              : payment.status === 'overdue' 
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                        >
+                          {payment.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {new Date(payment.dueDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {payment.status === 'pending' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => processPayment(payment.id)}
+                            className="mr-2"
+                            disabled={isLoading}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            ) : t('admin.payments.markAsPaid')}
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            {t('common.view')}
+                          </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-4 text-center text-muted-foreground">
+                      {t('noPaymentsFound')}
+                      No payments found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
                       <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-12"></div></td>
                       <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-16"></div></td>
                       <td className="px-6 py-4"><div className="animate-pulse h-4 bg-muted rounded w-20"></div></td>

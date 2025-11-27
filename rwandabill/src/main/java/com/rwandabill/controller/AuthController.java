@@ -33,18 +33,104 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/signup/super-admin")
+    @PostMapping(value = {"/signup", "/signup/"})
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<AuthResponse> signup(@Valid @RequestBody SignupRequest request) {
+        log.info("Received signup request for user: {}", request.getEmail());
+        try {
+            // Basic validation
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                throw new IllegalArgumentException("Email is required");
+            }
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                throw new IllegalArgumentException("Password is required");
+            }
+            if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Full name is required");
+            }
+            
+            AuthResponse response = authService.signup(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            log.warn("Validation error in user registration: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(AuthResponse.builder()
+                            .success(false)
+                            .message(e.getMessage())
+                            .build());
+        } catch (RuntimeException e) {
+            log.error("User signup error: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(AuthResponse.builder()
+                            .success(false)
+                            .message("Failed to create user: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    @PostMapping(value = {"/signup/super-admin", "/signup/super-admin/"})
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<AuthResponse> signupSuperAdmin(@Valid @RequestBody SignupRequest request) {
         log.info("Received signup request for super admin: {}", request.getEmail());
         try {
+            // Basic validation
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                throw new IllegalArgumentException("Email is required");
+            }
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                throw new IllegalArgumentException("Password is required");
+            }
+            
             AuthResponse response = authService.signupSuperAdmin(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (RuntimeException e) {
-            log.error("Super Admin signup error: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        } catch (IllegalArgumentException e) {
+            log.warn("Validation error in super admin registration: {}", e.getMessage());
+            return ResponseEntity.badRequest()
                     .body(AuthResponse.builder()
+                            .success(false)
                             .message(e.getMessage())
+                            .build());
+        } catch (RuntimeException e) {
+            log.error("Super Admin signup error: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(AuthResponse.builder()
+                            .success(false)
+                            .message("Failed to create super admin: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    @PostMapping(value = {"/signup/admin", "/signup/admin/"})
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<AuthResponse> signupAdmin(@Valid @RequestBody SignupRequest request) {
+        log.info("Received signup request for admin: {}", request.getEmail());
+        try {
+            // Basic validation
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                throw new IllegalArgumentException("Email is required");
+            }
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                throw new IllegalArgumentException("Password is required");
+            }
+            if (request.getService() == null || request.getService().trim().isEmpty()) {
+                throw new IllegalArgumentException("Service is required for admin registration");
+            }
+            
+            AuthResponse response = authService.signupAdmin(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            log.warn("Validation error in admin registration: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(AuthResponse.builder()
+                            .success(false)
+                            .message(e.getMessage())
+                            .build());
+        } catch (RuntimeException e) {
+            log.error("Admin signup error: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(AuthResponse.builder()
+                            .success(false)
+                            .message("Failed to create admin: " + e.getMessage())
                             .build());
         }
     }

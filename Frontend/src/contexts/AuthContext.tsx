@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const isAuthenticated = !!user && !!token;
 
-    // ---------------- CHECK AUTH (TOKEN VALIDATION) ----------------
+    // ---------------- CHECK AUTH (MOCKED) ----------------
     const checkAuth = async () => {
         const currentToken = localStorage.getItem("authToken");
         if (!currentToken) {
@@ -97,7 +97,149 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
 
         try {
-            const res = await fetch("/api/auth/me", {
+            // Mock user data based on token
+            const mockUser = {
+                id: "1",
+                fullName: "Test User",
+                email: "user@example.com",
+                telephone: "+250700000000",
+                district: "Kicukiro",
+                sector: "Gikondo",
+                role: "member" as const,
+                group: "Group A",
+                approved: true,
+                emailVerified: true
+            };
+            
+            setUser(mockUser);
+            setToken(currentToken);
+            setIsLoading(false);
+        } catch (error) {
+            console.error("Auth check failed:", error);
+            localStorage.removeItem("authToken");
+            setUser(null);
+            setToken(null);
+            setIsLoading(false);
+        }
+    };
+
+    // ---------------- LOGIN (MOCKED) ----------------
+    const login = async ({ email, password }: { email: string; password: string }) => {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Mock validation
+        const mockUser = MOCK_USERS.find(user => user.email === email && user.password === password);
+        
+        if (!mockUser) {
+            throw new Error("Invalid email or password");
+        }
+
+        const userData = {
+            id: "1",
+            fullName: mockUser.fullName,
+            email: mockUser.email,
+            telephone: "+250700000000",
+            district: "Kicukiro",
+            sector: "Gikondo",
+            role: mockUser.role as User['role'],
+            group: "Group A",
+            approved: true,
+            emailVerified: true,
+            service: mockUser.service as User['service']
+        };
+
+        const mockToken = `mock-jwt-token-${Date.now()}`;
+        
+        localStorage.setItem("authToken", mockToken);
+        setUser(userData);
+        setToken(mockToken);
+        
+        return userData;
+    };
+
+    // ---------------- SIGNUP (MOCKED) ----------------
+    const signup = async (data: {
+        fullName: string;
+        email: string;
+        telephone: string;
+        district: string;
+        sector: string;
+        password: string;
+    }) => {
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Check if user already exists
+        if (MOCK_USERS.some(user => user.email === data.email)) {
+            throw new Error("User with this email already exists");
+        }
+
+        // In a real app, this would be handled by the backend
+        const newUser = {
+            ...data,
+            id: `user-${Date.now()}`,
+            role: "member" as const,
+            approved: false,
+            emailVerified: false,
+            group: "Group A"
+        };
+
+        // Add to mock users (in memory only)
+        MOCK_USERS.push({
+            ...newUser,
+            password: data.password // In a real app, this would be hashed
+        });
+
+        return {
+            success: true,
+            message: "Registration successful! Please wait for admin approval."
+        };
+    };
+
+    // ---------------- LOGOUT ----------------
+    const logout = () => {
+        localStorage.removeItem("authToken");
+        setUser(null);
+        setToken(null);
+    };
+
+    // Mock Google Signup (not implemented in mock)
+    const googleSignup = async () => {
+        throw new Error("Google signup not implemented in mock mode");
+    };
+
+    // Initialize auth state on mount
+    useEffect(() => {
+        checkAuth();
+    }, []);
+
+    const value: AuthContextType = {
+        user,
+        login,
+        logout,
+        signup,
+        googleSignup,
+        isLoading,
+        isAuthenticated: !!user && !!token,
+        token,
+        checkAuth,
+    };
+
+    return (
+        <AuthContext.Provider value={value}>
+            {!isLoading && children}
+        </AuthContext.Provider>
+    );
+};
+
+export const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
+};
                 headers: {
                     Authorization: `Bearer ${currentToken}`,
                 },

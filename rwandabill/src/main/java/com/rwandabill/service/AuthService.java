@@ -3,6 +3,8 @@ package com.rwandabill.service;
 import com.rwandabill.dto.AuthResponse;
 import com.rwandabill.dto.LoginRequest;
 import com.rwandabill.dto.SignupRequest;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import com.rwandabill.entity.User;
 import com.rwandabill.entity.AdminEntity;
 import com.rwandabill.entity.SuperAdminEntity;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,30 +40,31 @@ public class AuthService {
     public AuthResponse signup(SignupRequest request) {
         // Check if user already exists
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Email already registered")
+                    .build();
         }
 
         // Create new user with pending approval
         User user = User.builder()
-                .email(request.getEmail())
+                .email(request.getEmail().toLowerCase().trim())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullName())
-                .telephone(request.getTelephone())
-                .district(request.getDistrict())
-                .sector(request.getSector())
-                .role(UserRole.USER)  // Default role for new users
-                .isActive(false) // Inactive until approved
-                .approved(false) // Requires admin approval
-                .emailVerified(false) // Email not verified yet
+                .fullName(request.getFullName().trim())
+                .telephone(request.getTelephone().trim())
+                .district(request.getDistrict().trim())
+                .sector(request.getSector().trim())
+                .role(UserRole.USER)
+                .isActive(true)
+                .approved(true)
+                .emailVerified(true)
                 .build();
 
         User savedUser = userRepository.save(user);
         log.info("New user registered (pending approval): {}", savedUser.getEmail());
 
-        // TODO: Send email verification
-        // TODO: Notify admin about new user registration
-
         return AuthResponse.builder()
+                .success(true)
                 .id(savedUser.getId())
                 .email(savedUser.getEmail())
                 .fullName(savedUser.getFullName())
@@ -70,68 +74,40 @@ public class AuthService {
                 .role(savedUser.getRole())
                 .isActive(savedUser.getIsActive())
                 .approved(savedUser.getApproved())
-                .message("Registration successful! Your account is pending admin approval. You will receive an email once your account is approved.")
-                .build();
-    }
-
-    @Transactional
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public AuthResponse signupAdmin(SignupRequest request) {
-        // Check if admin already exists
-        if (adminRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
-        }
-
-        // Validate service is provided
-        if (request.getService() == null) {
-            throw new RuntimeException("Service is required for admin registration");
-        }
-
-        // Get the current user (super admin) who is creating this admin
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        
-        if (currentUser == null || currentUser.getRole() != UserRole.SUPER_ADMIN) {
-            throw new RuntimeException("Only super admins can create admin accounts");
-        }
-
-        // Create new admin (approved by default when created by super admin)
-        AdminEntity admin = AdminEntity.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullName())
-                .telephone(request.getTelephone())
-                .district(request.getDistrict())
-                .sector(request.getSector())
-                .role(UserRole.ADMIN)
-                .service(ServiceType.valueOf(request.getService().toUpperCase()))
-                .isActive(true)
-                .approved(true)
-                .approvedAt(LocalDateTime.now())
-                .approvedBy(currentUser.getEmail())
-                .emailVerified(true)
-                .build();
-
-        AdminEntity savedAdmin = adminRepository.save(admin);
-        log.info("New admin registered: {}", savedAdmin.getEmail());
-
-        return AuthResponse.builder()
-                .id(savedAdmin.getId())
-                .email(savedAdmin.getEmail())
-                .fullName(savedAdmin.getFullName())
-                .telephone(savedAdmin.getTelephone())
-                .district(savedAdmin.getDistrict())
-                .sector(savedAdmin.getSector())
-                .role(savedAdmin.getRole())
-                .service(savedAdmin.getService())
-                .message("Admin registered successfully")
+                .message("Registration successful! Your account has been activated.")
                 .build();
     }
 
     @Transactional
     public AuthResponse signupSuperAdmin(SignupRequest request) {
+        log.info("Starting super admin registration for email: {}", request.getEmail());
+        
         // Check if super admin already exists
         if (superAdminRepository.count() > 0) {
-            throw new RuntimeException("A super admin already exists");
+            log.warn("Super admin already exists");
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Super admin already exists")
+                    .build();
+        }
+
+        // Validate required fields
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Email is required")
+                    .build();
+        }
+        if (request.getPassword() == null || request.getPassword().length() < 6) {
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Password must be at least 6 characters long")
+                    .build();
+        }
+        if (request.getFullName() == null || request.getFullName().trim().isEmpty()) {
+            return AuthResponse.builder()
+                    .success(false)
+                    .build();
         }
 
         // Create new super admin
@@ -142,17 +118,20 @@ public class AuthService {
                 .telephone(request.getTelephone())
                 .district(request.getDistrict())
                 .sector(request.getSector())
-                .role(UserRole.SUPER_ADMIN)
                 .isActive(true)
+                .approved(true)
+                .emailVerified(true)
                 .build();
 
         SuperAdminEntity savedSuperAdmin = superAdminRepository.save(superAdmin);
-        log.info("New super admin created: {}", savedSuperAdmin.getEmail());
+        log.info("Super admin created successfully: {}", savedSuperAdmin.getEmail());
 
-        // Generate JWT token with email and user ID
+
+        // Generate JWT token
         String token = jwtUtil.generateToken(savedSuperAdmin.getEmail(), savedSuperAdmin.getId());
 
         return AuthResponse.builder()
+                .success(true)
                 .id(savedSuperAdmin.getId())
                 .email(savedSuperAdmin.getEmail())
                 .fullName(savedSuperAdmin.getFullName())
@@ -160,47 +139,167 @@ public class AuthService {
                 .district(savedSuperAdmin.getDistrict())
                 .sector(savedSuperAdmin.getSector())
                 .role(savedSuperAdmin.getRole())
-                .isActive(savedSuperAdmin.getIsActive())
-                .approved(savedSuperAdmin.getApproved())
+                .isActive(true)
+                .approved(true)
+                .emailVerified(true)
                 .token(token)
                 .message("Super admin account created successfully")
-                .role(savedSuperAdmin.getRole())
-                .message("Super admin registered successfully")
                 .build();
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public AuthResponse signupAdmin(SignupRequest request) {
+        // Check if admin already exists
+        if (adminRepository.existsByEmail(request.getEmail())) {
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Email already registered")
+                    .build();
+        }
+
+        // Validate service is provided
+        if (request.getService() == null || request.getService().trim().isEmpty()) {
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Service is required for admin registration")
+                    .build();
+        }
+
+        try {
+            // Get the current user (super admin) who is creating this admin
+            User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            
+            if (currentUser == null || currentUser.getRole() != UserRole.SUPER_ADMIN) {
+                return AuthResponse.builder()
+                        .success(false)
+                        .message("Only super admins can create admin accounts")
+                        .build();
+            }
+
+            // Parse service type
+            ServiceType serviceType = ServiceType.valueOf(request.getService().toUpperCase());
+
+            // Create new admin (approved by default when created by super admin)
+            AdminEntity admin = AdminEntity.builder()
+                    .email(request.getEmail().toLowerCase().trim())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .fullName(request.getFullName().trim())
+                    .telephone(request.getTelephone().trim())
+                    .district(request.getDistrict().trim())
+                    .sector(request.getSector().trim())
+                    .role(UserRole.ADMIN)
+                    .service(serviceType)
+                    .isActive(true)
+                    .approved(true)
+                    .approvedAt(LocalDateTime.now())
+                    .approvedBy(currentUser.getEmail())
+                    .emailVerified(true)
+                    .build();
+
+            AdminEntity savedAdmin = adminRepository.save(admin);
+            log.info("New admin registered: {}", savedAdmin.getEmail());
+
+            return AuthResponse.builder()
+                    .success(true)
+                    .id(savedAdmin.getId())
+                    .email(savedAdmin.getEmail())
+                    .fullName(savedAdmin.getFullName())
+                    .telephone(savedAdmin.getTelephone())
+                    .district(savedAdmin.getDistrict())
+                    .sector(savedAdmin.getSector())
+                    .role(savedAdmin.getRole())
+                    .service(savedAdmin.getService())
+                    .isActive(true)
+                    .approved(true)
+                    .message("Admin registered successfully")
+                    .build();
+                    
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid service type: {}", request.getService());
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Invalid service type. Valid values are: " + 
+                            String.join(", ", Arrays.stream(ServiceType.values())
+                                    .map(Enum::name)
+                                    .collect(Collectors.toList())))
+                    .build();
+        } catch (Exception e) {
+            log.error("Error creating admin: {}", e.getMessage(), e);
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Error creating admin: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public AuthResponse login(LoginRequest request) {
+        // Try to find user in each repository
+        Optional<User> user = userRepository.findByEmail(request.getEmail());
+        Optional<AdminEntity> admin = adminRepository.findByEmail(request.getEmail());
+        Optional<SuperAdminEntity> superAdmin = superAdminRepository.findByEmail(request.getEmail());
+
+        // Check credentials and return appropriate response
+        if (user.isPresent() && passwordEncoder.matches(request.getPassword(), user.get().getPassword())) {
+            return buildAuthResponseFromUser(user.get());
+        } else if (admin.isPresent() && passwordEncoder.matches(request.getPassword(), admin.get().getPassword())) {
+            return buildAuthResponseFromAdmin(admin.get());
+        } else if (superAdmin.isPresent() && passwordEncoder.matches(request.getPassword(), superAdmin.get().getPassword())) {
+            return buildAuthResponseFromSuperAdmin(superAdmin.get());
+        } else {
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Invalid email or password")
+                    .build();
+        }
     }
 
     @Transactional(readOnly = true)
     public AuthResponse getCurrentUser(String token) {
-        // Remove 'Bearer ' prefix if present
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
+        if (token == null || !token.startsWith("Bearer ")) {
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Invalid or missing token")
+                    .build();
         }
 
-        // Validate token and get email
+        token = token.substring(7); // Remove 'Bearer ' prefix
         String email = jwtUtil.extractEmail(token);
+        
         if (email == null) {
-            throw new RuntimeException("Invalid or expired token");
+            return AuthResponse.builder()
+                    .success(false)
+                    .message("Invalid or expired token")
+                    .build();
         }
 
         // Try to find user in each repository
-        User user = userRepository.findByEmail(email).orElse(null);
-        AdminEntity admin = adminRepository.findByEmail(email).orElse(null);
-        SuperAdminEntity superAdmin = superAdminRepository.findByEmail(email).orElse(null);
-
-        // Check which type of user was found and build response
-        if (user != null) {
-            return buildAuthResponseFromUser(user);
-        } else if (admin != null) {
-            return buildAuthResponseFromAdmin(admin);
-        } else if (superAdmin != null) {
-            return buildAuthResponseFromSuperAdmin(superAdmin);
-        } else {
-            throw new RuntimeException("User not found");
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isPresent()) {
+            return buildAuthResponseFromUser(user.get());
         }
+
+        Optional<AdminEntity> admin = adminRepository.findByEmail(email);
+        if (admin.isPresent()) {
+            return buildAuthResponseFromAdmin(admin.get());
+        }
+
+        Optional<SuperAdminEntity> superAdmin = superAdminRepository.findByEmail(email);
+        if (superAdmin.isPresent()) {
+            return buildAuthResponseFromSuperAdmin(superAdmin.get());
+        }
+
+        return AuthResponse.builder()
+                .success(false)
+                .message("User not found")
+                .build();
     }
 
     private AuthResponse buildAuthResponseFromUser(User user) {
+        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
         return AuthResponse.builder()
+                .success(true)
                 .id(user.getId())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
@@ -208,13 +307,18 @@ public class AuthService {
                 .district(user.getDistrict())
                 .sector(user.getSector())
                 .role(user.getRole())
-                .service(null)
-                .message("User details retrieved successfully")
+                .isActive(user.getIsActive())
+                .approved(user.getApproved())
+                .emailVerified(user.getEmailVerified())
+                .token(token)
+                .message("Login successful")
                 .build();
     }
 
     private AuthResponse buildAuthResponseFromAdmin(AdminEntity admin) {
+        String token = jwtUtil.generateToken(admin.getEmail(), admin.getId());
         return AuthResponse.builder()
+                .success(true)
                 .id(admin.getId())
                 .email(admin.getEmail())
                 .fullName(admin.getFullName())
@@ -223,12 +327,18 @@ public class AuthService {
                 .sector(admin.getSector())
                 .role(admin.getRole())
                 .service(admin.getService())
-                .message("Admin details retrieved successfully")
+                .isActive(admin.getIsActive())
+                .approved(admin.getApproved())
+                .emailVerified(admin.getEmailVerified())
+                .token(token)
+                .message("Login successful")
                 .build();
     }
 
     private AuthResponse buildAuthResponseFromSuperAdmin(SuperAdminEntity superAdmin) {
+        String token = jwtUtil.generateToken(superAdmin.getEmail(), superAdmin.getId());
         return AuthResponse.builder()
+                .success(true)
                 .id(superAdmin.getId())
                 .email(superAdmin.getEmail())
                 .fullName(superAdmin.getFullName())
@@ -236,103 +346,9 @@ public class AuthService {
                 .district(superAdmin.getDistrict())
                 .sector(superAdmin.getSector())
                 .role(superAdmin.getRole())
-                .service(null)
-                .message("Super Admin details retrieved successfully")
-                .build();
-    }
-
-    @Transactional
-    public AuthResponse login(LoginRequest request) {
-        // Find user by email in any repository
-        User user = userRepository.findByEmail(request.getEmail()).orElse(null);
-        AdminEntity admin = null;
-        SuperAdminEntity superAdmin = null;
-
-        if (user == null) {
-            admin = adminRepository.findByEmail(request.getEmail()).orElse(null);
-            if (admin == null) {
-                superAdmin = superAdminRepository.findByEmail(request.getEmail()).orElse(null);
-            }
-        }
-
-        String email = "";
-        String password = "";
-        Long id = null;
-        String fullName = "";
-        String telephone = "";
-        String district = "";
-        String sector = "";
-        UserRole role = null;
-        ServiceType service = null;
-        boolean isActive = false;
-        boolean isApproved = true; // Default to true for admin and super admin
-
-        if (user != null) {
-            password = user.getPassword();
-            id = user.getId();
-            email = user.getEmail();
-            fullName = user.getFullName();
-            telephone = user.getTelephone();
-            district = user.getDistrict();
-            sector = user.getSector();
-            role = user.getRole();
-            isActive = user.getIsActive();
-            isApproved = user.getApproved();
-        } else if (admin != null) {
-            password = admin.getPassword();
-            id = admin.getId();
-            email = admin.getEmail();
-            fullName = admin.getFullName();
-            telephone = admin.getTelephone();
-            district = admin.getDistrict();
-            sector = admin.getSector();
-            role = admin.getRole();
-            service = admin.getService();
-            isActive = admin.getIsActive();
-        } else if (superAdmin != null) {
-            password = superAdmin.getPassword();
-            id = superAdmin.getId();
-            email = superAdmin.getEmail();
-            fullName = superAdmin.getFullName();
-            telephone = superAdmin.getTelephone();
-            district = superAdmin.getDistrict();
-            sector = superAdmin.getSector();
-            role = superAdmin.getRole();
-            isActive = superAdmin.getIsActive();
-        } else {
-            throw new RuntimeException("Invalid email or password");
-        }
-
-        // Verify password
-        if (!passwordEncoder.matches(request.getPassword(), password)) {
-            throw new RuntimeException("Invalid email or password");
-        }
-
-        // Check if user is active
-        if (!isActive) {
-            throw new RuntimeException("User account is inactive");
-        }
-        
-        // For regular users, check if they are approved
-        if (role == UserRole.USER && !isApproved) {
-            throw new RuntimeException("Your account is pending admin approval. Please wait for an administrator to approve your account.");
-        }
-
-        // Generate JWT token
-        String token = jwtUtil.generateToken(email, id);
-        log.info("User logged in: {}", email);
-
-        // Build and return the response based on user type
-        AuthResponse.AuthResponseBuilder responseBuilder;
-        if (user != null) {
-            responseBuilder = buildAuthResponseFromUser(user).toBuilder();
-        } else if (admin != null) {
-            responseBuilder = buildAuthResponseFromAdmin(admin).toBuilder();
-        } else {
-            responseBuilder = buildAuthResponseFromSuperAdmin(superAdmin).toBuilder();
-        }
-        
-        return responseBuilder
+                .isActive(superAdmin.getIsActive())
+                .approved(superAdmin.getApproved())
+                .emailVerified(superAdmin.getEmailVerified())
                 .token(token)
                 .message("Login successful")
                 .build();

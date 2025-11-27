@@ -1,15 +1,18 @@
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Users, Shield, TrendingUp, Activity } from "lucide-react";
 import { getSuperAdminStats } from "@/lib/api";
 import SuperadminNavbar from "../components/superadmin/SuperadminNavbar";
-import SuperadminProfile from "../components/superadmin/SuperadminProfile";
-import SuperadminSettings from "../components/superadmin/SuperadminSettings";
 import { SuperAdminTabs } from "../components/superadmin/SuperAdminTabs";
 import { ServiceComparison } from "../components/superadmin/ServiceComparison";
 import { SystemHealthMonitoring } from "../components/superadmin/SystemHealthMonitoring";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import AdminApprovals from "./AdminApprovals";
+import type { ReactNode } from "react";
+
+// Navigation types will be handled by the SuperadminNavbar component
 
 // Animation variants
 const pageVariants = {
@@ -19,7 +22,7 @@ const pageVariants = {
 };
 
 // Animated component wrapper
-const AnimatedPage = ({ children }) => (
+const AnimatedPage = ({ children }: { children: ReactNode }) => (
   <motion.div
     initial="initial"
     animate="in"
@@ -144,43 +147,48 @@ const SuperAdminDashboard = () => {
 
 // Main Superadmin component with navbar and sections
 const SuperAdmin = () => {
-  const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const navigate = useNavigate();
 
-  const renderSection = () => {
-    switch (activeSection) {
-      case "dashboard":
-        return <SuperAdminDashboard />;
-      case "profile":
-        return <SuperadminProfile />;
-      case "settings":
-        return <SuperadminSettings />;
-      default:
-        return <SuperAdminDashboard />;
+  // Update active section when URL changes
+  useEffect(() => {
+    const path = window.location.pathname;
+    setActiveSection(path.includes('approvals') ? 'approvals' : 'dashboard');
+  }, []);
+
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+    if (section === 'approvals') {
+      navigate('/approvals');
+    } else {
+      navigate('/');
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex h-screen bg-gray-50">
       <SuperadminNavbar
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
+        onSectionChange={handleSectionChange}
         collapsed={sidebarCollapsed}
         onCollapsedChange={setSidebarCollapsed}
       />
-
-      {/* Main Content Area */}
-      <div className={`transition-all duration-300 ${
-        sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
-      }`}>
-        <div className="min-h-screen">
-          <AnimatePresence mode="wait">
-            <AnimatedPage key={activeSection}>
-              {renderSection()}
-            </AnimatedPage>
-          </AnimatePresence>
+      
+      <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+        <div className={`transition-all duration-300 ${
+          sidebarCollapsed ? 'md:pl-20' : 'md:pl-64'
+        }`}>
+          <div className="min-h-screen p-6">
+            <AnimatePresence mode="wait">
+              <Routes>
+                <Route path="/" element={<SuperAdminDashboard />} />
+                <Route path="/approvals" element={<AdminApprovals />} />
+              </Routes>
+            </AnimatePresence>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

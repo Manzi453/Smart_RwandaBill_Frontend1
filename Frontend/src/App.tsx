@@ -7,8 +7,9 @@ import { Admin } from "./pages/Admin";
 import SignUpPage from "./pages/SignUp";
 import { User } from "./pages/User";
 import SuperAdmin from "./pages/SuperAdmin";
+import AdminApprovals from "./pages/AdminApprovals";
 import { AnimatePresence, motion } from "framer-motion";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { Toaster } from "@/components/ui/toaster";
 
 const queryClient = new QueryClient();
 
@@ -120,22 +121,40 @@ function AnimatedRoutes() {
             </RoleProtectedRoute>
           }
         />
+        
+        <Route
+          path="/admin/approvals"
+          element={
+            <RoleProtectedRoute allowedRoles={["superadmin"]}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AdminApprovals />
+              </motion.div>
+            </RoleProtectedRoute>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );
 }
 
-export default function App() {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <div className="fixed top-4 right-4 z-50">
-            <LanguageSwitcher />
+      <Router>
+        <AuthProvider>
+          <div className="min-h-screen bg-background">
+            <AnimatedRoutes />
+            <Toaster />
           </div>
-          <AnimatedRoutes />
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </QueryClientProvider>
   );
 }
+
+export default App;

@@ -72,10 +72,10 @@ const AdminNavbar = ({
   const ServiceIcon = serviceInfo.icon;
 
   const navItems = [
-    { id: "dashboard", label: t('dashboard'), icon: BarChart3 },
-    { id: "bill-generation", label: "Bill Generation", icon: FileText },
-    { id: "users", label: t('users'), icon: Users },
-    { id: "payments", label: t('payments'), icon: DollarSign },
+    { id: "dashboard", label: t('admin.dashboard.title'), icon: BarChart3 },
+    { id: "bill-generation", label: t('admin.billGeneration.title'), icon: FileText },
+    { id: "users", label: t('admin.users.title'), icon: Users },
+    { id: "payments", label: t('admin.payments.title'), icon: DollarSign },
   ];
 
   const quickAccessItems = [

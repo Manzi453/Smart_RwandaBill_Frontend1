@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 @Builder(toBuilder = true)
 public class AuthResponse {
 
+    @Builder.Default
+    private boolean success = true;
     private Long id;
     private String email;
     private String fullName;
