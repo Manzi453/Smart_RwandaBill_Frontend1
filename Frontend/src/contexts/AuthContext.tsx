@@ -268,6 +268,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         password: string;
         role: 'admin' | 'member';
         service?: 'water' | 'sanitation' | 'security';
+        group?: string;
     }) => {
         setIsLoading(true);
         try {
@@ -306,13 +307,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             }
 
             // Add to mock users (in memory only)
-            MOCK_USERS.push({
+            const newUser: MockUser = {
                 ...data,
                 role: data.role || "member" as const,
                 approved: false,
                 emailVerified: false,
-                group: data.group || "Group A"
-            });
+                group: data.group || (data.role === 'admin' ? 'Administrators' : 'Residents')
+            };
+            MOCK_USERS.push(newUser);
 
             return {
                 success: true,

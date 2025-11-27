@@ -105,6 +105,8 @@ export default function SignupPage() {
                     telephone: data.telephone,
                     district: data.district,
                     sector: data.sector,
+                    role: data.role,
+                    service: data.service
                 });
 
                 if (!result.success) {

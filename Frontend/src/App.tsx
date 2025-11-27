@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "r
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Landing } from "./pages/Landing";
 import LoginPage from "./pages/LoginPage";
-import { Admin } from "./pages/Admin";
+import  Admin from "./pages/Admin";
 import SignUpPage from "./pages/SignUp";
 import { User } from "./pages/User";
 import SuperAdmin from "./pages/SuperAdmin";
