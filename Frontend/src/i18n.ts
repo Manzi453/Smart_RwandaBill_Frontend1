@@ -64,7 +64,11 @@ const en = {
                 emailRequired: "Email or phone is required",
                 passwordRequired: "Password is required",
                 invalidCredentials: "Invalid email/phone or password"
-            }
+            },
+            logout: "Logout"
+        },
+        auth: {
+            logout: "Logout"
         },
         signup: {
             title: "Create an Account",
@@ -168,6 +172,13 @@ const en = {
         },
         /* ---------------- ADMIN ---------------- */
         admin: {
+            title: "Admin Panel",
+            sidebar: {
+                dashboard: "Dashboard",
+                users: "Users",
+                reports: "Reports",
+                settings: "Settings"
+            },
             dashboard: {
                 title: "Admin Dashboard",
                 stats: {
@@ -341,7 +352,11 @@ const fr = {
                 emailRequired: "L'email ou le téléphone est requis",
                 passwordRequired: "Le mot de passe est requis",
                 invalidCredentials: "Email/téléphone ou mot de passe invalide"
-            }
+            },
+            logout: "Se déconnecter"
+        },
+        auth: {
+            logout: "Se déconnecter"
         },
         signup: {
             title: "Créer un compte",
@@ -445,6 +460,13 @@ const fr = {
         },
         /* ---------------- ADMIN ---------------- */
         admin: {
+            title: "Panneau d'administration",
+            sidebar: {
+                dashboard: "Tableau de bord",
+                users: "Utilisateurs",
+                reports: "Rapports",
+                settings: "Paramètres"
+            },
             dashboard: {
                 title: "Tableau de bord administrateur",
                 stats: {
@@ -617,8 +639,13 @@ const rw = {
             errors: {
                 emailRequired: "Imeri cyangwa telefone birakenewe",
                 passwordRequired: "Ijambo banga rirakenewe",
-                invalidCredentials: "Imeri/Telefone cyangwa ijambo banga sibyemewe"
-            }
+                invalidCredentials: "Imeri/Telefone cyangwa ijambo banga sibyemewe",
+                logout: "Sohoka"
+            },
+            logout: "Sohoka"
+        },
+        auth: {
+            logout: "Sohoka"
         },
         signup: {
             title: "Funga Konti",
@@ -722,6 +749,13 @@ const rw = {
         },
         /* ---------------- ADMIN ---------------- */
         admin: {
+            title: "Imodoka y'umuyobozi",
+            sidebar: {
+                dashboard: "Ikibaho",
+                users: "Abakoresha",
+                reports: "Raporo",
+                settings: "Igenamiterere"
+            },
             dashboard: {
                 title: "Ikibaho cy'umuyobozi",
                 stats: {
