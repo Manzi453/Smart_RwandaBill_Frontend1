@@ -44,6 +44,12 @@ public class SuperAdminEntity {
     @Column(nullable = false)
     private Boolean isActive;
 
+    @Column(nullable = false)
+    private Boolean approved;
+
+    @Column(nullable = false)
+    private Boolean emailVerified;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -55,6 +61,8 @@ public class SuperAdminEntity {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         isActive = true;
+        approved = true; // Super admins are auto-approved
+        emailVerified = true; // Consider sending verification email in production
         if (role == null) {
             role = UserRole.SUPER_ADMIN;
         }

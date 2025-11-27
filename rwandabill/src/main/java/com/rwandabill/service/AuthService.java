@@ -130,8 +130,8 @@ public class AuthService {
     @Transactional
     public AuthResponse signupSuperAdmin(SignupRequest request) {
         // Check if super admin already exists
-        if (superAdminRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+        if (superAdminRepository.count() > 0) {
+            throw new RuntimeException("A super admin already exists");
         }
 
         // Create new super admin
@@ -147,7 +147,10 @@ public class AuthService {
                 .build();
 
         SuperAdminEntity savedSuperAdmin = superAdminRepository.save(superAdmin);
-        log.info("New super admin registered: {}", savedSuperAdmin.getEmail());
+        log.info("New super admin created: {}", savedSuperAdmin.getEmail());
+
+        // Generate JWT token with email and user ID
+        String token = jwtUtil.generateToken(savedSuperAdmin.getEmail(), savedSuperAdmin.getId());
 
         return AuthResponse.builder()
                 .id(savedSuperAdmin.getId())
@@ -156,6 +159,11 @@ public class AuthService {
                 .telephone(savedSuperAdmin.getTelephone())
                 .district(savedSuperAdmin.getDistrict())
                 .sector(savedSuperAdmin.getSector())
+                .role(savedSuperAdmin.getRole())
+                .isActive(savedSuperAdmin.getIsActive())
+                .approved(savedSuperAdmin.getApproved())
+                .token(token)
+                .message("Super admin account created successfully")
                 .role(savedSuperAdmin.getRole())
                 .message("Super admin registered successfully")
                 .build();

@@ -7,6 +7,9 @@ spring:
     username: postgres
     password: root
     driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
   
   jpa:
     hibernate:
@@ -15,7 +18,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-    show-sql: false
+    show-sql: true
   
   jackson:
     serialization:
@@ -26,6 +29,10 @@ server:
   port: 8083
   servlet:
     context-path: /api
+    register-default-servlet: false  # Disable default servlet handling
+  error:
+    whitelabel:
+      enabled: false  # Disable default error page
 
 jwt:
   secret: your-secret-key-change-this-in-production-with-a-strong-key-at-least-256-bits-long
