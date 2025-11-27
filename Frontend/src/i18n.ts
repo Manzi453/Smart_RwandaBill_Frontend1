@@ -19,7 +19,31 @@ const en = {
             save: "Save",
             cancel: "Cancel",
             delete: "Delete",
-            edit: "Edit"
+            edit: "Edit",
+            search: "Search",
+            status: "Status",
+            role: "Role",
+            service: "Service",
+            name: "Name",
+            email: "Email",
+            actions: "Actions",
+            all: "All",
+            selectStatus: "Select Status",
+            selectRole: "Select Role",
+            lastUpdated: "Last updated",
+            errorLoadingData: "Error loading data",
+            items: "items",
+            timeAgo: "{{count}} {{unit}} ago",
+            roles: {
+                admin: "Administrator",
+                user: "User",
+                superadmin: "Super Admin"
+            },
+            statuses: { // Changed from 'status' to 'statuses'
+                active: "Active",
+                inactive: "Inactive",
+                pending: "Pending"
+            }
         },
         /* ---------------- AUTH ---------------- */
         login: {
@@ -150,14 +174,17 @@ const en = {
                     totalUsers: "Total Users",
                     activeUsers: "Active Users",
                     pendingPayments: "Pending Payments",
-                    totalRevenue: "Total Revenue"
+                    totalRevenue: "Total Revenue",
+                    activeServices: "Active Services",
+                    serviceTypes: "Service Types",
+                    thisMonth: "This Month"
                 }
             },
             users: {
                 title: "Users Management",
                 searchPlaceholder: "Search users...",
                 noUsersFound: "No users found",
-                status: {
+                userStatus: { // Changed from 'status' to 'userStatus'
                     active: "Active",
                     inactive: "Inactive",
                     pending: "Pending Approval"
@@ -167,7 +194,8 @@ const en = {
                     edit: "Edit",
                     delete: "Delete",
                     approve: "Approve",
-                    deactivate: "Deactivate"
+                    deactivate: "Deactivate",
+                    statusUpdated: "User status updated to {{status}}"
                 }
             },
             payments: {
@@ -179,7 +207,7 @@ const en = {
                 dueDate: "Due Date",
                 markAsPaid: "Mark as Paid",
                 noPaymentsFound: "No payments found",
-                statuses: {
+                paymentStatuses: { // Changed from 'statuses' to 'paymentStatuses'
                     paid: "Paid",
                     pending: "Pending",
                     overdue: "Overdue"
@@ -202,7 +230,52 @@ const en = {
                 security: "Security",
                 save: "Save Changes",
                 reset: "Reset to Default"
+            },
+            activities: {
+                newUserRegistration: "New user registration",
+                paymentReceived: "Payment received",
+                billGenerated: "Bills generated"
+            },
+            recentActivities: "Recent Activities"
+        },
+        /* ---------------- SERVICE ADMIN ---------------- */
+        serviceAdmin: {
+            serviceTypes: {
+                water: "Water Service",
+                sanitation: "Sanitation Service",
+                security: "Security Service"
+            },
+            viewDataFor: "Viewing data for {{service}} service",
+            metrics: {
+                totalBills: "Total Bills",
+                paidBills: "Paid Bills",
+                pendingBills: "Pending Bills",
+                overdueBills: "Overdue Bills",
+                revenueTrend: "Revenue Trend",
+                districtRevenue: "District Revenue Distribution"
+            },
+            transactions: {
+                recentTransactions: "Recent Transactions",
+                user: "User",
+                amount: "Amount",
+                status: "Status",
+                date: "Date",
+                action: "Action",
+                view: "View"
+            },
+            reports: {
+                generate: "Generate Report"
             }
+        },
+        /* ---------------- NAVIGATION ---------------- */
+        navigation: {
+            dashboard: "Dashboard",
+            users: "Users",
+            payments: "Payments",
+            billGeneration: "Bill Generation",
+            settings: "Settings",
+            logout: "Logout",
+            administrator: "Administrator"
         }
     }
 };
@@ -223,7 +296,31 @@ const fr = {
             save: "Enregistrer",
             cancel: "Annuler",
             delete: "Supprimer",
-            edit: "Modifier"
+            edit: "Modifier",
+            search: "Rechercher",
+            status: "Statut",
+            role: "Rôle",
+            service: "Service",
+            name: "Nom",
+            email: "Email",
+            actions: "Actions",
+            all: "Tous",
+            selectStatus: "Sélectionner le statut",
+            selectRole: "Sélectionner le rôle",
+            lastUpdated: "Dernière mise à jour",
+            errorLoadingData: "Erreur de chargement des données",
+            items: "éléments",
+            timeAgo: "Il y a {{count}} {{unit}}",
+            roles: {
+                admin: "Administrateur",
+                user: "Utilisateur",
+                superadmin: "Super Administrateur"
+            },
+            statuses: { // Changed from 'status' to 'statuses'
+                active: "Actif",
+                inactive: "Inactif",
+                pending: "En attente"
+            }
         },
         /* ---------------- AUTH ---------------- */
         login: {
@@ -354,14 +451,17 @@ const fr = {
                     totalUsers: "Utilisateurs totaux",
                     activeUsers: "Utilisateurs actifs",
                     pendingPayments: "Paiements en attente",
-                    totalRevenue: "Revenu total"
+                    totalRevenue: "Revenu total",
+                    activeServices: "Services actifs",
+                    serviceTypes: "Types de service",
+                    thisMonth: "Ce mois-ci"
                 }
             },
             users: {
                 title: "Gestion des utilisateurs",
                 searchPlaceholder: "Rechercher des utilisateurs...",
                 noUsersFound: "Aucun utilisateur trouvé",
-                status: {
+                userStatus: { // Changed from 'status' to 'userStatus'
                     active: "Actif",
                     inactive: "Inactif",
                     pending: "En attente d'approbation"
@@ -371,7 +471,8 @@ const fr = {
                     edit: "Modifier",
                     delete: "Supprimer",
                     approve: "Approuver",
-                    deactivate: "Désactiver"
+                    deactivate: "Désactiver",
+                    statusUpdated: "Statut utilisateur mis à jour vers {{status}}"
                 }
             },
             payments: {
@@ -383,7 +484,7 @@ const fr = {
                 dueDate: "Date d'échéance",
                 markAsPaid: "Marquer comme payé",
                 noPaymentsFound: "Aucun paiement trouvé",
-                statuses: {
+                paymentStatuses: { // Changed from 'statuses' to 'paymentStatuses'
                     paid: "Payé",
                     pending: "En attente",
                     overdue: "En retard"
@@ -406,7 +507,52 @@ const fr = {
                 security: "Sécurité",
                 save: "Enregistrer les modifications",
                 reset: "Réinitialiser"
+            },
+            activities: {
+                newUserRegistration: "Nouvelle inscription d'utilisateur",
+                paymentReceived: "Paiement reçu",
+                billGenerated: "Factures générées"
+            },
+            recentActivities: "Activités récentes"
+        },
+        /* ---------------- SERVICE ADMIN ---------------- */
+        serviceAdmin: {
+            serviceTypes: {
+                water: "Service d'Eau",
+                sanitation: "Service d'Assainissement",
+                security: "Service de Sécurité"
+            },
+            viewDataFor: "Affichage des données pour le service {{service}}",
+            metrics: {
+                totalBills: "Factures totales",
+                paidBills: "Factures payées",
+                pendingBills: "Factures en attente",
+                overdueBills: "Factures en retard",
+                revenueTrend: "Tendance des revenus",
+                districtRevenue: "Répartition des revenus par district"
+            },
+            transactions: {
+                recentTransactions: "Transactions récentes",
+                user: "Utilisateur",
+                amount: "Montant",
+                status: "Statut",
+                date: "Date",
+                action: "Action",
+                view: "Voir"
+            },
+            reports: {
+                generate: "Générer un rapport"
             }
+        },
+        /* ---------------- NAVIGATION ---------------- */
+        navigation: {
+            dashboard: "Tableau de bord",
+            users: "Utilisateurs",
+            payments: "Paiements",
+            billGeneration: "Génération de factures",
+            settings: "Paramètres",
+            logout: "Déconnexion",
+            administrator: "Administrateur"
         }
     }
 };
@@ -427,7 +573,31 @@ const rw = {
             save: "Bika",
             cancel: "Hagarika",
             delete: "Siba",
-            edit: "Hindura"
+            edit: "Hindura",
+            search: "Shakisha",
+            status: "Imimerere",
+            role: "Uruhare",
+            service: "Serivisi",
+            name: "Izina",
+            email: "Imeri",
+            actions: "Ibikorwa",
+            all: "Byose",
+            selectStatus: "Hitamo imimerere",
+            selectRole: "Hitamo uruhare",
+            lastUpdated: "Byahinduwe",
+            errorLoadingData: "Ikosa mu kuzana amakuru",
+            items: "ibintu",
+            timeAgo: "{{count}} {{unit}} ishize",
+            roles: {
+                admin: "Umuberezi",
+                user: "Umukoresha",
+                superadmin: "Umuyobozi Mukuru"
+            },
+            statuses: { // Changed from 'status' to 'statuses'
+                active: "Bikora",
+                inactive: "Bidakora",
+                pending: "Biteganyijwe"
+            }
         },
         /* ---------------- AUTH ---------------- */
         login: {
@@ -558,14 +728,17 @@ const rw = {
                     totalUsers: "Abakoresha bose",
                     activeUsers: "Abakoresha bakora",
                     pendingPayments: "Amafaranga ateganyijwe",
-                    totalRevenue: "Amafaranga yose"
+                    totalRevenue: "Amafaranga yose",
+                    activeServices: "Serivisi zikora",
+                    serviceTypes: "Ubwoko bw'iserivisi",
+                    thisMonth: "Uku kwezi"
                 }
             },
             users: {
                 title: "Gucunga abakoresha",
                 searchPlaceholder: "Shakisha abakoresha...",
                 noUsersFound: "Nta bakoresha babonetse",
-                status: {
+                userStatus: { // Changed from 'status' to 'userStatus'
                     active: "Bakora",
                     inactive: "Bidakora",
                     pending: "Biteganyijwe"
@@ -575,7 +748,8 @@ const rw = {
                     edit: "Hindura",
                     delete: "Siba",
                     approve: "Emeza",
-                    deactivate: "Hagarika"
+                    deactivate: "Hagarika",
+                    statusUpdated: "Imimerere y'umukoresha yahinduwe {{status}}"
                 }
             },
             payments: {
@@ -587,7 +761,7 @@ const rw = {
                 dueDate: "Itariki yo kwishyura",
                 markAsPaid: "Shyira nkayishyuwe",
                 noPaymentsFound: "Nta mafaranga yabonetse",
-                statuses: {
+                paymentStatuses: { // Changed from 'statuses' to 'paymentStatuses'
                     paid: "Yishyuwe",
                     pending: "Biteganyijwe",
                     overdue: "Yarangije igihe"
@@ -610,7 +784,52 @@ const rw = {
                 security: "Umutekano",
                 save: "Bika ibahindutse",
                 reset: "Subiramo ibanza"
+            },
+            activities: {
+                newUserRegistration: "Kwiyandikisha kumukoresha mushya",
+                paymentReceived: "Amafaranga yakiriwe",
+                billGenerated: "Fagitire zakoze"
+            },
+            recentActivities: "Ibikorwa byakozwe vuba"
+        },
+        /* ---------------- SERVICE ADMIN ---------------- */
+        serviceAdmin: {
+            serviceTypes: {
+                water: "Serivisi y'Amazi",
+                sanitation: "Serivisi y'Ikirundo",
+                security: "Serivisi y'Umutekano"
+            },
+            viewDataFor: "Kureba amakuru ya serivisi {{service}}",
+            metrics: {
+                totalBills: "Fagitire zose",
+                paidBills: "Fagitire zishyuwe",
+                pendingBills: "Fagitire ziteganyijwe",
+                overdueBills: "Fagitire zarangije igihe",
+                revenueTrend: "Imiterere y'amafaranga",
+                districtRevenue: "Gusandazwa kw'amafaranga mu karere"
+            },
+            transactions: {
+                recentTransactions: "Ibikorwa byakozwe vuba",
+                user: "Umukoresha",
+                amount: "Amafaranga",
+                status: "Imimerere",
+                date: "Itariki",
+                action: "Igikorwa",
+                view: "Reba"
+            },
+            reports: {
+                generate: "Kora raporo"
             }
+        },
+        /* ---------------- NAVIGATION ---------------- */
+        navigation: {
+            dashboard: "Ikibaho",
+            users: "Abakoresha",
+            payments: "Amafaranga",
+            billGeneration: "Gukora fagitire",
+            settings: "Igenamiterere",
+            logout: "Sohoka",
+            administrator: "Umuberezi"
         }
     }
 };
