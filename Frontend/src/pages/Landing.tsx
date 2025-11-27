@@ -29,43 +29,43 @@ export const Landing = () => {
   const features = [
     {
       icon: Smartphone,
-      title: t("mobileMoneyIntegration"),
-      description: t("mobileMoneyDesc"),
+      title: t("landing.mobileMoneyIntegration"),
+      description: t("landing.mobileMoneyDesc"),
     },
     {
       icon: Clock,
-      title: t("realTimeNotifications"),
-      description: t("notificationsDesc"),
+      title: t("landing.realTimeNotifications"),
+      description: t("landing.notificationsDesc"),
     },
     {
       icon: Shield,
-      title: t("securePayments"),
-      description: t("securePaymentsDesc"),
+      title: t("landing.securePayments"),
+      description: t("landing.securePaymentsDesc"),
     },
     {
       icon: CheckCircle2,
-      title: t("digitalReceipts"),
-      description: t("digitalReceiptsDesc"),
+      title: t("landing.digitalReceipts"),
+      description: t("landing.digitalReceiptsDesc"),
     },
   ];
 
   const services = [
     {
       icon: Droplets,
-      title: t("waterBills"),
-      description: t("waterBillsDesc"),
+      title: t("landing.waterBills"),
+      description: t("landing.waterBillsDesc"),
       color: "text-blue-500",
     },
     {
       icon: Shield,
-      title: t("securityServices"),
-      description: t("securityServicesDesc"),
+      title: t("landing.securityServices"),
+      description: t("landing.securityServicesDesc"),
       color: "text-green-500",
     },
     {
       icon: Trash2,
-      title: t("sanitation"),
-      description: t("sanitationDesc"),
+      title: t("landing.sanitation"),
+      description: t("landing.sanitationDesc"),
       color: "text-orange-500",
     },
   ];
@@ -86,16 +86,16 @@ export const Landing = () => {
               <span className="text-white font-bold">RB</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">{t("rwandaBills")}</h1>
-              <p className="text-xs text-muted-foreground">{t("smartCommunityBilling")}</p>
+              <h1 className="text-xl font-bold text-foreground">{t("landing.appName")}</h1>
+              <p className="text-xs text-muted-foreground">{t("landing.smartCommunityBilling")}</p>
             </div>
           </div>
           <div className="flex items-center space-x-3">
             <Button variant="ghost" asChild>
-              <Link to="/login">{t("login")}</Link>
+              <Link to="/login">{t("login.button")}</Link>
             </Button>
             <Button variant="gradient" asChild>
-              <Link to="/signup">{t("signUp")}</Link>
+              <Link to="/signup">{t("signup.button")}</Link>
             </Button>
             <div className="ml-4">
               <LanguageSwitcher />
@@ -110,22 +110,22 @@ export const Landing = () => {
         <div className="container mx-auto relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-5xl md:text-6xl font-bold text-primary-foreground mb-6 animate-fade-in">
-              {t("payBills")}
-              <span className="block text-accent-light">{t("payBillsDesc")}</span>
+              {t("landing.payBills")}
+              <span className="block text-accent-light">{t("landing.payBillsDesc")}</span>
             </h1>
             <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto animate-fade-in">
-              {t("joinThousands")}
+              {t("landing.joinThousands")}
             </p>
 
             {/* Quick Start Form */}
             <Card className="max-w-md mx-auto bg-card/90 backdrop-blur-sm border-0 shadow-2xl animate-slide-up">
               <CardHeader className="text-center pb-4">
-                <CardTitle className="text-primary">{t("getStartedToday")}</CardTitle>
+                <CardTitle className="text-primary">{t("landing.getStartedToday")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="phone" className="text-sm font-medium">
-                    {t("enterPhoneNumber")}
+                    {t("landing.enterPhoneNumber")}
                   </Label>
                   <Input
                     id="phone"
@@ -144,12 +144,12 @@ export const Landing = () => {
                   asChild
                 >
                   <Link to={`/signup?phone=${encodeURIComponent(phoneNumber)}`}>
-                    {t("createAccount")}
+                    {t("signup.button")}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
                 <p className="text-xs text-center text-muted-foreground">
-                  {t("freeToJoin")}
+                  {t("landing.freeToJoin")}
                 </p>
               </CardContent>
             </Card>
@@ -162,10 +162,10 @@ export const Landing = () => {
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              {t("payAllCommunityBills")}
+              {t("landing.payAllCommunityBills")}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t("managePayments")}
+              {t("landing.managePayments")}
             </p>
           </div>
 
@@ -200,10 +200,10 @@ export const Landing = () => {
         <div className="container mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              {t("whyChooseRwandaBills")}
+              {t("landing.whyChooseRwandaBills")}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t("experienceFuture")}
+              {t("landing.experienceFuture")}
             </p>
           </div>
 
@@ -237,23 +237,23 @@ export const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-4xl font-bold text-primary mb-2">50K+</div>
-              <div className="text-muted-foreground">{t("activeUsers")}</div>
+              <div className="text-muted-foreground">{t("landing.activeUsers")}</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-secondary mb-2">
                 RWF 2.5B
               </div>
-              <div className="text-muted-foreground">{t("billsPaid")}</div>
+              <div className="text-muted-foreground">{t("landing.billsPaid")}</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-accent mb-2">99.9%</div>
-              <div className="text-muted-foreground">{t("uptime")}</div>
+              <div className="text-muted-foreground">{t("landing.uptime")}</div>
             </div>
             <div>
               <div className="text-4xl font-bold text-success mb-2">4.9/5</div>
               <div className="text-muted-foreground flex items-center justify-center">
                 <Star className="h-4 w-4 text-yellow-500 mr-1 fill-current" />
-                {t("userRating")}
+                {t("landing.userRating")}
               </div>
             </div>
           </div>
@@ -264,22 +264,22 @@ export const Landing = () => {
       <section className="py-16 px-4 gradient-hero">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-            {t("readyToSimplify")}
+            {t("landing.readyToSimplify")}
           </h2>
           <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-            {t("joinThousands")}
+            {t("landing.joinThousands")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button variant="secondary" size="xl" className="min-w-[200px]" asChild>
               <Link to="/signup">
                 <Users className="mr-2 h-5 w-5" />
-                {t("forCitizens")}
+                {t("landing.forCitizens")}
               </Link>
             </Button>
             <Button variant="outline" size="xl" className="min-w-[200px]" asChild>
               <Link to="/login">
                 <BarChart3 className="mr-2 h-5 w-5" />
-                {t("forAdmins")}
+                {t("landing.forAdmins")}
               </Link>
             </Button>
           </div>
@@ -295,14 +295,14 @@ export const Landing = () => {
                 <span className="text-white font-bold text-sm">RB</span>
               </div>
               <div>
-                <div className="font-semibold">{t("rwandaBills")}</div>
+                <div className="font-semibold">{t("landing.appName")}</div>
                 <div className="text-sm text-muted-foreground">
-                  {t("allRightsReserved")}
+                  {t("landing.allRightsReserved")}
                 </div>
               </div>
             </div>
             <div className="text-sm text-muted-foreground">
-              {t("madeWithLove")}
+              {t("landing.madeWithLove")}
             </div>
           </div>
         </div>

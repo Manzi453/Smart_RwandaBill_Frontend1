@@ -13,6 +13,19 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { loginSchema, LoginFormData } from "@/lib/validation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+
+// Extend the LoginError interface to include response data
+declare global {
+  interface Error {
+    response?: {
+      status?: number;
+      data?: {
+        message?: string;
+      };
+    };
+  }
+}
 
 interface LoginError extends Error {
     response?: {
@@ -30,6 +43,21 @@ export default function LoginPage() {
     const { t } = useTranslation();
     const [loginError, setLoginError] = useState<string | null>(null);
     const [isUnapproved, setIsUnapproved] = useState(false);
+    
+    // Get translations
+    const translations = {
+        welcome: t('login.welcome'),
+        emailOrPhone: t('login.emailOrPhone'),
+        emailOrPhonePlaceholder: t('login.emailOrPhonePlaceholder'),
+        password: t('login.password'),
+        forgotPassword: t('login.forgotPassword'),
+        button: t('login.button'),
+        noAccount: t('login.noAccount'),
+        register: t('login.register'),
+        error: t('login.error'),
+        commonError: t('common.error'),
+        goBack: t('common.goBack')
+    };
 
     const {
         register,
@@ -55,7 +83,7 @@ export default function LoginPage() {
 
                 if (loginError.response?.status === 403) {
                     setIsUnapproved(true);
-                    setLoginError(t("loginPage.error"));
+                    setLoginError(translations.error);
                 }
                 else if (loginError.message) {
                     setLoginError(loginError.message);
@@ -64,7 +92,7 @@ export default function LoginPage() {
                     setLoginError(loginError.response.data.message);
                 }
                 else {
-                    setLoginError(t("loginPage.error"));
+                    setLoginError(translations.error);
                 }
 
                 throw error;
@@ -96,23 +124,24 @@ export default function LoginPage() {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
             className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-50 to-blue-200 px-4"
         >
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md relative">
+                <div className="absolute top-4 right-4 z-10">
+                    <LanguageSwitcher />
+                </div>
                 <Card className="shadow-lg rounded-2xl">
                     <CardContent className="p-8">
 
                         <motion.h2
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
                             className="text-3xl font-bold text-center text-blue-600 mb-6"
                         >
-                            {t("loginPage.welcome")}
+                            {translations.welcome}
                         </motion.h2>
 
                         {loginError && (
@@ -123,7 +152,7 @@ export default function LoginPage() {
                             >
                                 <Alert variant="destructive">
                                     <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>{t("common.error")}</AlertTitle>
+                                    <AlertTitle>{translations.commonError}</AlertTitle>
                                     <AlertDescription>{loginError}</AlertDescription>
                                 </Alert>
                             </motion.div>
@@ -137,9 +166,9 @@ export default function LoginPage() {
                             >
                                 <Alert>
                                     <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>{t("loginPage.error")}</AlertTitle>
+                                    <AlertTitle>{translations.error}</AlertTitle>
                                     <AlertDescription>
-                                        {t("loginPage.error")}
+                                        {translations.error}
                                     </AlertDescription>
                                 </Alert>
                             </motion.div>
@@ -149,11 +178,11 @@ export default function LoginPage() {
                             <div className="space-y-4">
 
                                 <div>
-                                    <Label htmlFor="email">{t("loginPage.emailOrPhone")}</Label>
+                                    <Label htmlFor="email">{translations.emailOrPhone}</Label>
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder={t("loginPage.emailOrPhonePlaceholder")}
+                                        placeholder={translations.emailOrPhonePlaceholder}
                                         {...register("email")}
                                         disabled={mutation.isPending}
                                         className={`mt-1 ${errors.email ? 'border-red-500' : ''}`}
@@ -167,12 +196,12 @@ export default function LoginPage() {
 
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <Label htmlFor="password">{t("loginPage.password")}</Label>
+                                        <Label htmlFor="password">{translations.password}</Label>
                                         <Link
                                             to="/forgot-password"
                                             className="text-sm font-medium text-blue-600 hover:underline"
                                         >
-                                            {t("loginPage.forgotPassword") ?? "Forgot Password?"}
+                                            {translations.forgotPassword}
                                         </Link>
                                     </div>
                                     <Input
@@ -196,7 +225,7 @@ export default function LoginPage() {
                                     {mutation.isPending && (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     )}
-                                    {t("loginPage.button")}
+                                    {translations.button}
                                 </Button>
 
                                 <Button
@@ -205,7 +234,7 @@ export default function LoginPage() {
                                     variant="outline"
                                     className="w-full"
                                 >
-                                    {t("goBack")}
+                                    {translations.goBack}
                                 </Button>
                             </div>
                         </form>
@@ -216,9 +245,9 @@ export default function LoginPage() {
                             transition={{ delay: 0.7 }}
                             className="text-center text-gray-600 text-sm mt-6"
                         >
-                            {t("loginPage.noAccount")}{" "}
+                            {translations.noAccount}{" "}
                             <Link to="/signup" className="text-blue-600 font-medium hover:underline">
-                                {t("loginPage.register")}
+                                {translations.register}
                             </Link>
                         </motion.p>
                     </CardContent>
