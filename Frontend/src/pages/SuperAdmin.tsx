@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from "recharts";
-import { Users, Settings, Shield, TrendingUp, Loader2, Activity } from "lucide-react";
-import { getSuperAdminStats, getSuperAdminBillsChart, getSuperAdminUsersChart, getSuperAdminAdminsChart, getSuperAdminSystemHealth } from "@/lib/api";
+import { Users, Shield, TrendingUp, Activity } from "lucide-react";
+import { getSuperAdminStats } from "@/lib/api";
 import SuperadminNavbar from "../components/superadmin/SuperadminNavbar";
 import SuperadminProfile from "../components/superadmin/SuperadminProfile";
 import SuperadminSettings from "../components/superadmin/SuperadminSettings";
@@ -17,12 +16,6 @@ const pageVariants = {
   initial: { opacity: 0, x: -20 },
   in: { opacity: 1, x: 0 },
   out: { opacity: 0, x: 20 }
-};
-
-const pageTransition = {
-  type: "tween",
-  ease: "anticipate",
-  duration: 1
 };
 
 // Animated component wrapper
@@ -41,12 +34,10 @@ const AnimatedPage = ({ children }) => (
 const SuperAdminDashboard = () => {
   const { t } = useTranslation();
 
-  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
+  const { data: stats, error: statsError } = useQuery({
     queryKey: ['superAdminStats'],
     queryFn: getSuperAdminStats,
   });
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   const statCards = [
     {

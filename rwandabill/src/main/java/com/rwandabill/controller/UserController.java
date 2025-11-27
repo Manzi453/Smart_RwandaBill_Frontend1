@@ -2,6 +2,7 @@ package com.rwandabill.controller;
 
 import com.rwandabill.dto.AuthResponse;
 import com.rwandabill.dto.CreateAdminRequest;
+import com.rwandabill.entity.User;
 import com.rwandabill.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,8 +38,14 @@ public class UserController {
     @GetMapping("/{userId}")
     public ResponseEntity<AuthResponse> getUserById(@PathVariable Long userId) {
         try {
-            AuthResponse user = userService.getUserById(userId);
-            return ResponseEntity.ok(user);
+            User user = userService.getUserById(userId);
+            AuthResponse response = AuthResponse.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .role(user.getRole())
+                    .message("User retrieved successfully")
+                    .build();
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             log.error("Error fetching user {}: {}", userId, e.getMessage());
             return ResponseEntity.status(404)

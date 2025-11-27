@@ -1,17 +1,24 @@
 package com.rwandabill.service;
 
 import com.rwandabill.dto.AuthResponse;
+import com.rwandabill.dto.UserApprovalRequest;
+import com.rwandabill.dto.UserResponse;
 import com.rwandabill.entity.User;
 import com.rwandabill.entity.UserRole;
+import com.rwandabill.exception.ResourceNotFoundException;
 import com.rwandabill.repository.UserRepository;
 import com.rwandabill.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,35 +26,72 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
-
     private final UserRepository userRepository;
     private final SecurityUtil securityUtil;
     private final PasswordEncoder passwordEncoder;
+    
+    @Transactional(readOnly = true)
+    public Page<UserResponse> findPendingApprovals(Pageable pageable) {
+        return userRepository.findByApprovedFalseAndRole(UserRole.USER, pageable)
+                .map(UserResponse::fromEntity);
+    }
+    
+    @Transactional
+    public UserResponse updateUserApprovalStatus(Long userId, UserApprovalRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        
+        if (request.isApprove()) {
+            user.setApproved(true);
+            user.setApprovedAt(LocalDateTime.now());
+            user.setApprovedBy(currentUser);
+            user.setIsActive(true);
+            user.setRejectionReason(null);
+            log.info("User {} approved by admin {}", user.getEmail(), currentUser.getEmail());
+            
+            // TODO: Send approval email to user
+        } else {
+            user.setApproved(false);
+            user.setApprovedAt(null);
+            user.setApprovedBy(null);
+            user.setIsActive(false);
+            user.setRejectionReason(request.getRejectionReason());
+            log.info("User {} rejected by admin {}", user.getEmail(), currentUser.getEmail());
+            
+            // TODO: Send rejection email to user with reason
+        }
+        
+        User updatedUser = userRepository.save(user);
+        return UserResponse.fromEntity(updatedUser);
+    }
+    
+    @Transactional(readOnly = true)
+    public UserResponse getUserApprovalStatus(Long userId) {
+        return userRepository.findById(userId)
+                .map(UserResponse::fromEntity)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+    }
 
     @Transactional(readOnly = true)
     public AuthResponse getCurrentUser() {
-        User user = securityUtil.getCurrentUser();
-        return convertToAuthResponse(user);
-    }
-
-    @Transactional(readOnly = true)
-    public AuthResponse getUserById(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return convertToAuthResponse(user);
-    }
-
-    @Transactional(readOnly = true)
-    public AuthResponse getUserByEmail(String email) {
+        String email = securityUtil.getCurrentUserEmail();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
         return convertToAuthResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
     public List<AuthResponse> getAllUsers() {
-        List<User> users = userRepository.findAll();
+        List<User> users = userRepository.findByRole(UserRole.USER);
         return users.stream()
                 .map(this::convertToAuthResponse)
                 .collect(Collectors.toList());
@@ -110,6 +154,13 @@ public class UserService {
         log.info("New super admin created: {}", savedSuperAdmin.getEmail());
 
         return convertToAuthResponse(savedSuperAdmin);
+    }
+
+    @Transactional(readOnly = true)
+    public AuthResponse getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return convertToAuthResponse(user);
     }
 
     private AuthResponse convertToAuthResponse(User user) {

@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from "recharts";
-import { Users, DollarSign, Clock, TrendingUp, Loader2, Activity, Search, Download } from "lucide-react";
+import { Users, DollarSign, Clock, TrendingUp, Loader2, Activity, Download } from "lucide-react";
 import { getAdminStats, getAdminPaymentsChart, getAdminPaymentStatusChart, getAdminUserGrowthChart, getAdminUsersList, getAdminPaymentsList, getAdminRecentActivities, generateBills } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import AdminNavbar from "../components/admin/AdminNavbar";
 import { ServiceAdminDashboard } from "../components/admin/ServiceAdminDashboard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -20,12 +20,6 @@ const pageVariants = {
   initial: { opacity: 0, x: -20 },
   in: { opacity: 1, x: 0 },
   out: { opacity: 0, x: 20 }
-};
-
-const pageTransition = {
-  type: "tween",
-  ease: "anticipate",
-  duration: 1
 };
 
 // Animated component wrapper
@@ -45,14 +39,14 @@ const AdminDashboard = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
 
-  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
+  const { data: stats, error: statsError } = useQuery({
     queryKey: ['adminStats', user?.role, user?.service],
-    queryFn: async () => await getAdminStats(user),
+    queryFn: async () => await getAdminStats(user!),
   });
 
   const { data: paymentsChart, isLoading: paymentsLoading } = useQuery({
     queryKey: ['adminPaymentsChart', user?.role, user?.service],
-    queryFn: async () => await getAdminPaymentsChart(user),
+    queryFn: async () => await getAdminPaymentsChart(user!),
   });
 
   const { data: paymentStatusChart, isLoading: statusLoading } = useQuery({
@@ -104,7 +98,7 @@ const AdminDashboard = () => {
   ];
 
   // Scroll direction state
-  const [scrollDirection, setScrollDirection] = useState(null);
+  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
 
   useEffect(() => {
     let lastScrollY = window.pageYOffset;
@@ -115,6 +109,8 @@ const AdminDashboard = () => {
         setScrollDirection("down");
       } else if (scrollY < lastScrollY) {
         setScrollDirection("up");
+      } else {
+        setScrollDirection(null);
       }
       lastScrollY = scrollY > 0 ? scrollY : 0;
     };
@@ -329,7 +325,6 @@ const AdminDashboard = () => {
 
 // Bill Generation Section
 const BillGenerationSection = () => {
-  const { t } = useTranslation();
   const [selectedService, setSelectedService] = useState("water");
   const [selectedDistrict, setSelectedDistrict] = useState("");
 
@@ -497,7 +492,7 @@ const PaymentsSection = () => {
   const { user } = useAuth();
   const { data: payments, isLoading } = useQuery({
     queryKey: ['adminPaymentsList', user?.role, user?.service],
-    queryFn: () => getAdminPaymentsList(user),
+    queryFn: () => getAdminPaymentsList(user!),
   });
 
   const handleExport = () => {
@@ -629,10 +624,9 @@ const SettingsSection = () => {
 const Admin = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { user } = useAuth();
 
   const renderSection = () => {
-    const { user } = useAuth();
-    
     // Use new ServiceAdminDashboard for service admins
     if (user?.role === "admin" && activeSection === "dashboard") {
       return (

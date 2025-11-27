@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   BarChart,
   Bar,
@@ -19,8 +18,6 @@ import {
 import { TrendingUp, TrendingDown } from "lucide-react";
 
 export const SpendingAnalytics = () => {
-  const { t } = useTranslation();
-
   // Monthly spending data
   const monthlyData = [
     { month: "Jan", water: 15000, security: 25000, sanitation: 8000 },
@@ -53,7 +50,6 @@ export const SpendingAnalytics = () => {
     { category: "Sanitation", current: 9500, average: 8500, trend: "up" },
   ];
 
-  const COLORS = ["#3b82f6", "#10b981", "#f59e0b"];
 
   return (
     <div className="space-y-6">

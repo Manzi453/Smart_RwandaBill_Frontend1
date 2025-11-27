@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,6 @@ interface PaymentEvent {
 }
 
 export const PaymentCalendar = () => {
-  const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Mock payment events

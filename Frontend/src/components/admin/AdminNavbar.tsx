@@ -4,7 +4,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import {
-  User,
   Menu,
   X,
   ChevronLeft,
@@ -41,7 +40,6 @@ const AdminNavbar = ({
   const { t } = useTranslation();
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   React.useEffect(() => {
     setIsCollapsed(collapsed);

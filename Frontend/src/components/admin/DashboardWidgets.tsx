@@ -1,12 +1,11 @@
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
 import {
   TrendingUp,
   Users,
   DollarSign,
   Clock,
-  Settings,
   X,
 } from "lucide-react";
 import { useState } from "react";

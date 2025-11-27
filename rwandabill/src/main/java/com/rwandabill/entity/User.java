@@ -15,6 +15,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@NamedEntityGraph(
+    name = "user-with-approval",
+    attributeNodes = @NamedAttributeNode("approvedBy")
+)
 public class User {
 
     @Id
@@ -55,12 +59,32 @@ public class User {
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+    
+    @Column(nullable = false)
+    private Boolean approved = false;
+    
+    @Column(nullable = true)
+    private LocalDateTime approvedAt;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by")
+    private User approvedBy;
+    
+    @Column(length = 500, nullable = true)
+    private String rejectionReason;
+    
+    @Column(nullable = false)
+    private Boolean emailVerified = false;
+    
+    @Column(name = "verification_token", length = 64, nullable = true)
+    private String verificationToken;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        isActive = true;
+        isActive = false; // Users are inactive until approved
+        approved = false; // Explicitly set to false for new users
         if (role == null) {
             role = UserRole.USER;
         }

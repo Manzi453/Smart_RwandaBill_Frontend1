@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export interface User {
     id: string;
@@ -7,231 +7,272 @@ export interface User {
     telephone: string;
     district: string;
     sector: string;
-    role: 'superadmin' | 'admin' | 'member';
-    service?: 'security' | 'sanitation' | 'water'; // Optional service field for admins
+    role: "superadmin" | "admin" | "member";
+    service?: "security" | "sanitation" | "water";
     group: string;
+    approved: boolean;
+    approvedAt?: string;
+    approvedBy?: string;
+    rejectionReason?: string;
+    emailVerified: boolean;
 }
 
 interface AuthContextType {
     user: User | null;
-    login: (data: { email: string; password: string }) => Promise<void>;
+    login: (data: { email: string; password: string }) => Promise<User>;
     logout: () => void;
-    signup: (data: { fullName: string; email: string; telephone: string; district: string; sector: string; password: string }) => Promise<void>;
+    signup: (data: {
+        fullName: string;
+        email: string;
+        telephone: string;
+        district: string;
+        sector: string;
+        password: string;
+    }) => Promise<{ success: boolean; message: string }>;
     googleSignup: (data: { fullName: string; email: string }) => Promise<void>;
     isLoading: boolean;
     isAuthenticated: boolean;
     token: string | null;
+    checkAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(localStorage.getItem('authToken'));
-    const [isLoading, setIsLoading] = useState(false);
+interface AuthProviderProps {
+    children: ReactNode;
+}
 
+// ------------------ MOCKED USERS ------------------
+const MOCK_USERS = [
+    {
+        email: "superadmin@example.com",
+        password: "admin123",
+        role: "superadmin",
+        fullName: "Super Administrator",
+        service: undefined,
+    },
+    {
+        email: "adminwater@example.com",
+        password: "admin123",
+        role: "admin",
+        service: "water",
+        fullName: "Water Admin",
+    },
+    {
+        email: "adminsanitation@example.com",
+        password: "admin123",
+        role: "admin",
+        service: "sanitation",
+        fullName: "Sanitation Admin",
+    },
+    {
+        email: "adminsecurity@example.com",
+        password: "admin123",
+        role: "admin",
+        service: "security",
+        fullName: "Security Admin",
+    },
+    {
+        email: "user@example.com",
+        password: "user123",
+        role: "member",
+        fullName: "Regular User",
+        service: undefined,
+    },
+];
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+    const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(localStorage.getItem("authToken"));
+    const [isLoading, setIsLoading] = useState(true);
+
+    const isAuthenticated = !!user && !!token;
+
+    // ---------------- CHECK AUTH (TOKEN VALIDATION) ----------------
+    const checkAuth = async () => {
+        const currentToken = localStorage.getItem("authToken");
+        if (!currentToken) {
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/auth/me", {
+                headers: {
+                    Authorization: `Bearer ${currentToken}`,
+                },
+            });
+
+            if (!res.ok) throw new Error("Auth check failed");
+
+            const userData = await res.json();
+            setUser({
+                ...userData,
+                approved: userData.approved ?? true,
+                emailVerified: userData.emailVerified ?? true,
+            });
+        } catch (error) {
+            logout();
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        checkAuth();
+    }, []);
+
+    // ---------------- HANDLE LOGIN (MOCK + BACKEND) ----------------
     const login = async (data: { email: string; password: string }) => {
         setIsLoading(true);
+
         try {
-            // Check for default credentials first
-            const defaultUsers = {
-                'superadmin@example.com': {
-                    password: 'admin123',
-                    user: {
-                        id: '1',
-                        fullName: 'Super Admin',
-                        email: 'superadmin@example.com',
-                        telephone: '+250 123 456 789',
-                        district: 'Kigali',
-                        sector: 'Gasabo',
-                        role: 'superadmin' as const,
-                        group: 'System Administrators'
-                    }
-                },
-                'adminwater@example.com': {
-                    password: 'admin123',
-                    user: {
-                        id: '2',
-                        fullName: 'Water Admin',
-                        email: 'adminwater@example.com',
-                        telephone: '+250 123 456 790',
-                        district: 'Kigali',
-                        sector: 'Nyarugenge',
-                        role: 'admin' as const,
-                        service: 'water' as const,
-                        group: 'Water Department'
-                    }
-                },
-                'adminsanitation@example.com': {
-                    password: 'admin123',
-                    user: {
-                        id: '4',
-                        fullName: 'Sanitation Admin',
-                        email: 'adminsanitation@example.com',
-                        telephone: '+250 123 456 792',
-                        district: 'Kigali',
-                        sector: 'Kacyiru',
-                        role: 'admin' as const,
-                        service: 'sanitation' as const,
-                        group: 'Sanitation Department'
-                    }
-                },
-                'adminsecurity@example.com': {
-                    password: 'admin123',
-                    user: {
-                        id: '5',
-                        fullName: 'Security Admin',
-                        email: 'adminsecurity@example.com',
-                        telephone: '+250 123 456 793',
-                        district: 'Kigali',
-                        sector: 'Kimihurura',
-                        role: 'admin' as const,
-                        service: 'security' as const,
-                        group: 'Security Department'
-                    }
-                },
-                'user@example.com': {
-                    password: 'user123',
-                    user: {
-                        id: '3',
-                        fullName: 'Regular User',
-                        email: 'user@example.com',
-                        telephone: '+250 123 456 791',
-                        district: 'Kigali',
-                        sector: 'Kicukiro',
-                        role: 'member' as const,
-                        group: 'General Users'
-                    }
-                }
-            };
-
-            if (defaultUsers[data.email] && defaultUsers[data.email].password === data.password) {
-                // Use default user
-                setUser(defaultUsers[data.email].user);
-                setToken('default-token'); // Fake token for default users
-                localStorage.setItem('authToken', 'default-token');
-                setIsLoading(false);
-                return;
-            }
-
-            // If not default credentials, proceed with API call
-            const response = await fetch('http://localhost:8083/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            // 1️⃣ Attempt BACKEND LOGIN
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
 
-            if (!response.ok) {
-                const errorData = await response.text();
-                throw new Error(errorData || 'Login failed');
+            if (response.ok) {
+                const result = await response.json();
+                localStorage.setItem("authToken", result.token);
+                setToken(result.token);
+
+                const loggedUser: User = {
+                    id: result.id.toString(),
+                    fullName: result.fullName,
+                    email: result.email,
+                    telephone: result.telephone,
+                    district: result.district,
+                    sector: result.sector,
+                    role: result.role,
+                    service: result.service,
+                    group: "",
+                    approved: result.approved ?? true,
+                    emailVerified: result.emailVerified ?? true,
+                };
+
+                setUser(loggedUser);
+                return loggedUser;
             }
 
-            const userData = await response.json();
+            // 2️⃣ If backend fails → fallback to MOCK USERS
+            const mock = MOCK_USERS.find(
+                (m) => m.email === data.email && m.password === data.password
+            );
 
-            // Store the token
-            if (userData.token) {
-                setToken(userData.token);
-                localStorage.setItem('authToken', userData.token);
+            if (mock) {
+                const mockUser: User = {
+                    id: "mock-" + mock.email,
+                    fullName: mock.fullName,
+                    email: mock.email,
+                    telephone: "N/A",
+                    district: "N/A",
+                    sector: "N/A",
+                    role: mock.role as User["role"],
+                    service: mock.service as "security" | "sanitation" | "water" | undefined,
+                    group: "",
+                    approved: true,
+                    emailVerified: true,
+                };
+
+                // Create a fake token
+                const fakeToken = "mock-token-" + Date.now();
+                localStorage.setItem("authToken", fakeToken);
+                setToken(fakeToken);
+                setUser(mockUser);
+
+                return mockUser;
             }
 
-            // Map backend role to frontend role
-            const roleMapping: { [key: string]: 'superadmin' | 'admin' | 'member' } = {
-                'SUPER_ADMIN': 'superadmin',
-                'ADMIN': 'admin',
-                'USER': 'member'
-            };
-
-            const mappedUser: User = {
-                id: userData.id.toString(),
-                fullName: userData.fullName,
-                email: userData.email,
-                telephone: '', // Not returned by backend, could be added later
-                district: userData.district,
-                sector: userData.sector,
-                role: roleMapping[userData.role] || 'member',
-                group: 'Default Group', // Could be added to backend later
-            };
-
-            setUser(mappedUser);
-
-        } catch (error: any) {
-            throw new Error(error.message || "Login failed");
+            throw new Error("Invalid email or password");
+        } catch (err) {
+            console.error(err);
+            throw err;
         } finally {
             setIsLoading(false);
         }
     };
 
+    // ---------------- LOGOUT ----------------
     const logout = () => {
-        setUser(null);
+        localStorage.removeItem("authToken");
         setToken(null);
-        localStorage.removeItem('authToken');
+        setUser(null);
     };
 
-    const signup = async (data: { fullName: string; email: string; telephone: string; district: string; sector: string; password: string }) => {
+    // ---------------- SIGNUP ----------------
+    const signup = async (data: {
+        fullName: string;
+        email: string;
+        telephone: string;
+        district: string;
+        sector: string;
+        password: string;
+    }) => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:8083/api/auth/signup', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            const response = await fetch("/api/auth/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
 
+            const json = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.text();
-                throw new Error(errorData || 'Signup failed');
+                throw new Error(json.message || "Signup failed");
             }
 
-            // Signup successful, but don't auto-login
-            // User will need to login manually
-
-        } catch (error: any) {
-            throw new Error(error.message || "Signup failed");
+            return { success: true, message: "Signup successful. Await approval." };
+        } catch (err) {
+            return {
+                success: false,
+                message: err instanceof Error ? err.message : "Unknown error",
+            };
         } finally {
             setIsLoading(false);
         }
     };
 
+    // ---------------- GOOGLE SIGNUP ----------------
     const googleSignup = async (data: { fullName: string; email: string }) => {
         setIsLoading(true);
         try {
-            const response = await fetch('http://localhost:8083/api/auth/oauth/signup', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+            const res = await fetch("/api/auth/oauth/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
 
-            if (!response.ok) {
-                const errorData = await response.text();
-                throw new Error(errorData || 'Google signup failed');
-            }
-
-            // Signup successful, but don't auto-login
-            // User will need to login manually
-
-        } catch (error: any) {
-            throw new Error(error.message || "Google signup failed");
+            if (!res.ok) throw new Error("Google signup failed");
         } finally {
             setIsLoading(false);
         }
     };
 
+    const value: AuthContextType = {
+        user,
+        login,
+        logout,
+        signup,
+        googleSignup,
+        isLoading,
+        isAuthenticated,
+        token,
+        checkAuth,
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, signup, googleSignup, isLoading, isAuthenticated: !!user, token }}>
-            {children}
+        <AuthContext.Provider value={value}>
+            {!isLoading && children}
         </AuthContext.Provider>
     );
 };
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+    const ctx = useContext(AuthContext);
+    if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+    return ctx;
 };

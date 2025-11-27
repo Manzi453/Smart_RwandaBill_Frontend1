@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/Input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Label } from "@/components/ui/label";
 import {
-  Upload,
   Camera,
   CheckCircle,
   AlertCircle,
@@ -38,7 +36,6 @@ interface VerificationStatus {
 }
 
 export const EnhancedProfileManagement = () => {
-  const { t } = useTranslation();
   const [profile, setProfile] = useState<ProfileData>({
     fullName: "John Doe",
     email: "john@example.com",
@@ -52,13 +49,13 @@ export const EnhancedProfileManagement = () => {
     },
   });
 
-  const [verification, setVerification] = useState<VerificationStatus>({
+  const [verification] = useState<VerificationStatus>({
     email: true,
     phone: false,
     identity: false,
   });
 
-  const [profileCompletion, setProfileCompletion] = useState(65);
+  const [profileCompletion] = useState(65);
   const [isEditing, setIsEditing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<{

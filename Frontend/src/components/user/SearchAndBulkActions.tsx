@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// @ts-ignore
+import { Input } from "@/components/ui/Input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Search,
@@ -32,7 +30,6 @@ interface Payment {
 }
 
 export const SearchAndBulkActions = () => {
-  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedPayments, setSelectedPayments] = useState<string[]>([]);

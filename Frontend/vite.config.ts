@@ -9,10 +9,28 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(), 
+    mode === "development" && componentTagger()
+  ].filter(Boolean),
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    alias: [
+      {
+        find: "@",
+        replacement: path.resolve(__dirname, "./src"),
+      },
+      {
+        find: "@/components",
+        replacement: path.resolve(__dirname, "./src/components"),
+      },
+    ],
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2020',
     },
+  },
+  build: {
+    target: 'es2020',
   },
 }));

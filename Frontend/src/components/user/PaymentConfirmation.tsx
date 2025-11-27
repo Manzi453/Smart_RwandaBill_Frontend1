@@ -2,8 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   CheckCircle,
@@ -87,10 +86,10 @@ export const PaymentConfirmation = ({
         {/* Success Message */}
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-bold text-green-600">
-            Payment Successful!
+            {t("payment.success.title", "Payment Successful!")}
           </h2>
           <p className="text-muted-foreground">
-            Your payment has been processed successfully
+            {t("payment.success.message", "Your payment has been processed successfully")}
           </p>
         </div>
 
@@ -100,7 +99,7 @@ export const PaymentConfirmation = ({
             {/* Transaction ID */}
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground uppercase tracking-wide">
-                Transaction ID
+                {t("payment.transactionId", "Transaction ID")}
               </p>
               <div className="flex items-center gap-2 p-3 bg-white rounded-lg border border-green-200">
                 <span className="font-mono font-semibold flex-1">
@@ -137,7 +136,7 @@ export const PaymentConfirmation = ({
 
               <div className="p-3 bg-white rounded-lg border border-green-200">
                 <p className="text-xs text-muted-foreground mb-1">
-                  Payment Method
+                  {t("payment.paymentMethod", "Payment Method")}
                 </p>
                 <p className="text-sm font-semibold capitalize">
                   {payment.paymentMethod}
@@ -163,7 +162,7 @@ export const PaymentConfirmation = ({
         {payment.nextSteps && payment.nextSteps.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">What's Next?</CardTitle>
+              <CardTitle className="text-base">{t("payment.nextSteps.title", "What's Next?")}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
@@ -198,7 +197,7 @@ export const PaymentConfirmation = ({
             ) : (
               <>
                 <Download className="mr-2 h-4 w-4" />
-                Download Receipt
+                {t("payment.actions.downloadReceipt", "Download Receipt")}
               </>
             )}
           </Button>
@@ -210,7 +209,7 @@ export const PaymentConfirmation = ({
             size="lg"
           >
             <Home className="mr-2 h-4 w-4" />
-            Back to Dashboard
+            {t("payment.actions.backToDashboard", "Back to Dashboard")}
           </Button>
         </div>
 
@@ -218,7 +217,7 @@ export const PaymentConfirmation = ({
         <Alert className="bg-blue-50 border-blue-200">
           <CheckCircle className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700">
-            A receipt has been sent to your email. You can also download it above or access it anytime from your Payment History.
+            {t("payment.receiptInfo", "A receipt has been sent to your email. You can also download it above or access it anytime from your Payment History.")}
           </AlertDescription>
         </Alert>
       </motion.div>
@@ -243,10 +242,10 @@ export const PaymentConfirmation = ({
         {/* Processing Message */}
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-blue-600">
-            Processing Payment...
+            {t("payment.processing.title", "Processing Payment...")}
           </h2>
           <p className="text-muted-foreground">
-            Please don't close this window. Your payment is being processed.
+            {t("payment.processing.message", "Please don't close this window. Your payment is being processed.")}
           </p>
         </div>
 
@@ -254,17 +253,17 @@ export const PaymentConfirmation = ({
         <Card>
           <CardContent className="pt-6 space-y-3">
             <div className="flex justify-between items-center p-3 bg-muted/30 rounded">
-              <span className="text-muted-foreground">Amount</span>
+              <span className="text-muted-foreground">{t("payment.amount", "Amount")}</span>
               <span className="font-bold">
                 RWF {payment.amount.toLocaleString()}
               </span>
             </div>
             <div className="flex justify-between items-center p-3 bg-muted/30 rounded">
-              <span className="text-muted-foreground">Service</span>
+              <span className="text-muted-foreground">{t("payment.service", "Service")}</span>
               <span className="font-semibold capitalize">{payment.service}</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-muted/30 rounded">
-              <span className="text-muted-foreground">Method</span>
+              <span className="text-muted-foreground">{t("payment.method", "Method")}</span>
               <span className="font-semibold capitalize">
                 {payment.paymentMethod}
               </span>
@@ -276,7 +275,7 @@ export const PaymentConfirmation = ({
         <Alert className="bg-blue-50 border-blue-200">
           <Clock className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700">
-            This usually takes 1-2 minutes. We'll notify you once your payment is confirmed.
+            {t("payment.processing.note", "This usually takes 1-2 minutes. We'll notify you once your payment is confirmed.")}
           </AlertDescription>
         </Alert>
       </motion.div>
@@ -328,7 +327,7 @@ export const PaymentConfirmation = ({
             <span className="font-semibold capitalize">{payment.service}</span>
           </div>
           <div className="flex justify-between items-center p-3 bg-muted/30 rounded">
-            <span className="text-muted-foreground">Transaction ID</span>
+            <span className="text-muted-foreground">{t("payment.transactionId", "Transaction ID")}</span>
             <span className="font-mono text-sm">{payment.transactionId}</span>
           </div>
         </CardContent>
@@ -337,14 +336,14 @@ export const PaymentConfirmation = ({
       {/* Troubleshooting */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Troubleshooting</CardTitle>
+          <CardTitle className="text-base">{t("payment.troubleshooting.title", "Troubleshooting")}</CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>✓ Check your internet connection</li>
-            <li>✓ Verify your payment method has sufficient funds</li>
-            <li>✓ Try a different payment method</li>
-            <li>✓ Contact customer support if the problem persists</li>
+            <li>✓ {t("payment.troubleshooting.internet", "Check your internet connection")}</li>
+            <li>✓ {t("payment.troubleshooting.funds", "Verify your payment method has sufficient funds")}</li>
+            <li>✓ {t("payment.troubleshooting.differentMethod", "Try a different payment method")}</li>
+            <li>✓ {t("payment.troubleshooting.contactSupport", "Contact customer support if the problem persists")}</li>
           </ul>
         </CardContent>
       </Card>
@@ -352,11 +351,11 @@ export const PaymentConfirmation = ({
       {/* Action Buttons */}
       <div className="space-y-2">
         <Button onClick={onDone} className="w-full" size="lg">
-          Try Again
+          {t("payment.actions.tryAgain", "Try Again")}
         </Button>
 
         <Button variant="outline" className="w-full" size="lg">
-          Contact Support
+          {t("payment.actions.contactSupport", "Contact Support")}
         </Button>
       </div>
 
@@ -364,7 +363,7 @@ export const PaymentConfirmation = ({
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Your account has not been charged. Please try again or contact our support team for assistance.
+          {t("payment.failed.notCharged", "Your account has not been charged. Please try again or contact our support team for assistance.")}
         </AlertDescription>
       </Alert>
     </motion.div>

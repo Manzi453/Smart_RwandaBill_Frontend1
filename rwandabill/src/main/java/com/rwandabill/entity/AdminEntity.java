@@ -48,6 +48,16 @@ public class AdminEntity {
     @Column(nullable = false)
     private Boolean isActive;
 
+    @Column(name = "email_verified", nullable = false)
+    private Boolean emailVerified = false;
+
+    @Column(nullable = false)
+    private Boolean approved = false;
+    
+    private LocalDateTime approvedAt;
+    
+    private String approvedBy;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

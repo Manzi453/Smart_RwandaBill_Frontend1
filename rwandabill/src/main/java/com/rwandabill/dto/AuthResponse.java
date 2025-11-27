@@ -7,10 +7,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 public class AuthResponse {
 
     private Long id;
@@ -23,4 +25,10 @@ public class AuthResponse {
     private ServiceType service;
     private String token;
     private String message;
+    private Boolean isActive;
+    private Boolean approved;
+    private LocalDateTime approvedAt;
+    private String approvedBy;
+    private String rejectionReason;
+    private Boolean emailVerified;
 }

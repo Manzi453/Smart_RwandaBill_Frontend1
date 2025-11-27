@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTranslation } from "react-i18next";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  User,
   BarChart3,
   Settings,
   Shield,
@@ -28,7 +26,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 
 export const EnhancedDashboard = () => {
-  const { t } = useTranslation();
   const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 

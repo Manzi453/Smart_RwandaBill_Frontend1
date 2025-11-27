@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { FileText, CheckCircle, Clock, AlertCircle, DollarSign } from "lucide-react";
 
 interface StatCard {

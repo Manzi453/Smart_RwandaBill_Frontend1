@@ -14,11 +14,10 @@ import {
   Smartphone,
   Star,
 } from "lucide-react";
-// @ts-ignore
-import { Input } from "@/components/ui/input";
+
+import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/label";
-// @ts-ignore
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import LanguageSwitcher from "@/components/LanguageSwitcher";

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -47,7 +46,6 @@ interface Bill {
 }
 
 export const BillViewer = ({ bill }: { bill: Bill }) => {
-  const { t } = useTranslation();
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -17,10 +16,7 @@ import {
   Lock,
   Download,
   Palette,
-  Eye,
-  EyeOff,
   CheckCircle,
-  AlertCircle,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -41,7 +37,6 @@ interface PrivacySettings {
 }
 
 export const EnhancedSettings = () => {
-  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<NotificationSettings>({
     emailNotifications: true,
     smsNotifications: true,

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
+// Removed unused AnimatePresence and useTranslation imports
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -41,9 +41,15 @@ export const PaymentProcessor = ({
   onPaymentComplete,
 }: {
   bill: Bill;
-  onPaymentComplete: (result: any) => void;
+  onPaymentComplete: (result: {
+    transactionId: string;
+    amount: number;
+    service: string;
+    paymentMethod: string;
+    timestamp: Date;
+    status: string;
+  }) => void;
 }) => {
-  const { t } = useTranslation();
   const [selectedMethod, setSelectedMethod] = useState<string>("");
   const [paymentState, setPaymentState] = useState<PaymentState>({
     status: "idle",

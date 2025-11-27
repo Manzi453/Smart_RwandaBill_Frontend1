@@ -12,10 +12,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = {"http://localhost:8080"})
+@CrossOrigin(origins = {
+    "http://localhost:8080",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173"
+}, 
+allowCredentials = "true", 
+allowedHeaders = "*", 
+methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class AuthController {
 
     private final AuthService authService;
@@ -79,5 +87,19 @@ public class AuthController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Backend is running");
+    }
+    
+    @GetMapping("/me")
+    public ResponseEntity<AuthResponse> getCurrentUser(@RequestHeader("Authorization") String token) {
+        try {
+            AuthResponse response = authService.getCurrentUser(token);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            log.error("Error fetching current user: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(AuthResponse.builder()
+                            .message(e.getMessage())
+                            .build());
+        }
     }
 }

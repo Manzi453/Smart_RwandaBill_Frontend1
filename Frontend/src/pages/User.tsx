@@ -1,9 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { useAuth } from "@/contexts/AuthContext";
-import { getUserStats, getUserPayments, getUserPaymentHistory, getUserNotifications } from "@/lib/api";
 import UserNavbar from "../components/user/UserNavbar";
 import UserProfile from "../components/user/UserProfile";
 import UserSettings from "../components/user/UserSettings";
@@ -14,12 +10,6 @@ const pageVariants = {
   initial: { opacity: 0, x: -20 },
   in: { opacity: 1, x: 0 },
   out: { opacity: 0, x: 20 }
-};
-
-const pageTransition = {
-  type: "tween",
-  ease: "anticipate",
-  duration: 1
 };
 
 // Animated component wrapper

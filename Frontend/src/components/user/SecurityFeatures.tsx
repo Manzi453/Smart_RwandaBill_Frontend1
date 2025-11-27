@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/label";
 import {
   Shield,
@@ -13,8 +12,6 @@ import {
   Copy,
   CheckCircle,
   AlertCircle,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 // @ts-ignore
@@ -43,7 +40,6 @@ interface BackupCode {
 }
 
 export const SecurityFeatures = () => {
-  const { t } = useTranslation();
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [showBackupCodes, setShowBackupCodes] = useState(false);
@@ -240,7 +236,6 @@ export const SecurityFeatures = () => {
                   variant="outline"
                   className="w-full"
                 >
-                  <Eye className="mr-2 h-4 w-4" />
                   Show Backup Codes
                 </Button>
               ) : (

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -37,32 +36,24 @@ interface Receipt {
 }
 
 export const ReceiptGenerator = ({ receipt }: { receipt: Receipt }) => {
-  const { t } = useTranslation();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
-  const handleGenerateReceipt = async () => {
-    setIsGenerating(true);
+const handleDownloadReceipt = async () => {
     try {
-      // Simulate PDF generation
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      // In real implementation, call backend to generate PDF
-      console.log("Receipt generated:", receipt.receiptNumber);
+      setIsGenerating(true);
+      if (receipt.pdfUrl) {
+        const link = document.createElement("a");
+        link.href = receipt.pdfUrl;
+        link.download = `receipt-${receipt.receiptNumber}.pdf`;
+        link.click();
+      }
     } catch (error) {
-      console.error("Failed to generate receipt:", error);
+      console.error('Error generating receipt:', error);
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  const handleDownloadReceipt = () => {
-    if (receipt.pdfUrl) {
-      const link = document.createElement("a");
-      link.href = receipt.pdfUrl;
-      link.download = `receipt-${receipt.receiptNumber}.pdf`;
-      link.click();
     }
   };
 
@@ -265,9 +256,11 @@ export const ReceiptGenerator = ({ receipt }: { receipt: Receipt }) => {
         {/* Primary Actions */}
         <div className="grid grid-cols-2 gap-2">
           <Button
+            variant="outline"
+            size="sm"
             onClick={handleDownloadReceipt}
-            className="flex items-center justify-center gap-2"
             disabled={isGenerating}
+            className="flex items-center justify-center gap-2"
           >
             {isGenerating ? (
               <>
@@ -277,14 +270,13 @@ export const ReceiptGenerator = ({ receipt }: { receipt: Receipt }) => {
             ) : (
               <>
                 <Download className="h-4 w-4" />
-                Download PDF
+                Download
               </>
             )}
           </Button>
 
           <Button
             onClick={handleEmailReceipt}
-            variant="outline"
             className="flex items-center justify-center gap-2"
             disabled={isSending}
           >
