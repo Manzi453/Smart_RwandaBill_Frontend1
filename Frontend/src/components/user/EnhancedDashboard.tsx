@@ -24,6 +24,7 @@ import { NotificationsPanel } from "./NotificationsPanel";
 import { QuickPaymentButton } from "./QuickPaymentButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
+import { usersApi } from "@/lib/apiClient";
 
 export const EnhancedDashboard = () => {
   const { user, token } = useAuth();
@@ -44,49 +45,49 @@ export const EnhancedDashboard = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchUserData = async () => {
-      try {
-          setLoading(true);
-          const headers: HeadersInit = {"Content-Type": "application/json"};
-          if (token) {
-              headers.Authorization = `Bearer ${token}`;
-          }
-          const response = await fetch("http://localhost:8083/api/users/me", {
-              credentials: "include",
-              headers,
-          });
+    try {
+      setLoading(true);
+      // Use the API client to fetch user data
+      const response = await usersApi.getCurrentUser();
+      const userData = response.data;
 
-          if (!response.ok) throw new Error("Failed to fetch user data");
-
-          const data = await response.json();
-
-          // Map AuthResponse to expected userData structure
-          setUserData({
-              fullName: data.fullName || "",
-              pendingAmount: 0, // TODO: Implement bill data fetching
-              totalBills: 0,
-              paidBills: 0,
-              pendingBills: 0,
-              overdueBills: 0,
-              totalDue: 0,
-          });
-          setError(null);
-      } catch (err: unknown) {
-          console.error("Error fetching user data:", err);
-          const message = err instanceof Error ? err.message : "Failed to load data";
-          setError(message);
-      } finally {
-          setLoading(false);
+      // Map the response to the expected userData structure
+      setUserData({
+        fullName: userData.fullName || "",
+        pendingAmount: userData.pendingAmount || 0,
+        totalBills: userData.totalBills || 0,
+        paidBills: userData.paidBills || 0,
+        pendingBills: userData.pendingBills || 0,
+        overdueBills: userData.overdueBills || 0,
+        totalDue: userData.totalDue || 0,
+      });
+      setError(null);
+    } catch (err: unknown) {
+      console.error("Error fetching user data:", err);
+      const message = err instanceof Error ? 
+        (err as any).response?.data?.message || err.message : 
+        "Failed to load user data";
+      setError(message);
+      
+      // If unauthorized, redirect to login
+      if ((err as any).response?.status === 401) {
+        window.location.href = '/login';
       }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ✅ Fetch user data from backend API
+  // Fetch user data on component mount and when token changes
   useEffect(() => {
-      if (token && token !== 'default-token') {
-          fetchUserData();
-      } else {
-          setLoading(false);
-      }
-  }, [token]);
+    // Only fetch if we have a valid token and user is not already loaded
+    if (token && token !== 'default-token' && !userData) {
+      fetchUserData();
+    } else if (!token) {
+      // If no token, redirect to login
+      window.location.href = '/login';
+    }
+  }, [token, userData]); // Add userData to dependency array to prevent unnecessary re-fetches
 
   const tabVariants = {
     hidden: {opacity: 0, y: 10},

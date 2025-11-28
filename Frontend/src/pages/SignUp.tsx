@@ -131,7 +131,6 @@ export default function SignupPage() {
             setSignupError(null);
             
             // Prepare the signup data with proper typing
-            // Prepare signup data with proper typing
             const signupData = {
                 fullName: formData.fullName,
                 email: formData.email,
@@ -139,6 +138,7 @@ export default function SignupPage() {
                 district: formData.district,
                 sector: formData.sector,
                 password: formData.password,
+                // The role will be mapped to backend format in AuthContext
                 role: isAdminSignup ? 'admin' as const : 'member' as const,
                 ...(isAdminSignup && formData.service ? {
                     service: formData.service
@@ -168,21 +168,25 @@ export default function SignupPage() {
             await mutation.mutateAsync(formData, {
                 onSuccess: (result) => {
                     // Show success message
-                    toast.success(result.message || (isAdminSignup 
+                    const successMessage = isAdminSignup 
                         ? 'Admin registration submitted for approval' 
-                        : 'Registration successful! You can now log in.'));
+                        : 'Registration successful! You can now log in.';
                     
-                    // Reset form
-                    // navigate to login after a short delay
-                    setTimeout(() => {
-                        navigate('/login', { 
-                            state: { 
-                                message: isAdminSignup 
-                                    ? 'Your admin account is pending approval. You will be notified once approved.'
-                                    : 'You can now log in with your credentials.'
-                            } 
-                        });
-                    }, 2000);
+                    toast.success(successMessage);
+                    
+                    // Clear any existing form data
+                    // You might want to reset your form here if using react-hook-form
+                    // reset();
+                    
+                    // Navigate to login page with a success message
+                    navigate('/login', { 
+                        state: { 
+                            from: 'signup',
+                            message: isAdminSignup 
+                                ? 'Your admin account is pending approval. You will be notified once approved.'
+                                : 'You can now log in with your credentials.'
+                        } 
+                    });
                 },
                 onError: (error: Error) => {
                     console.error('Signup error:', error);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -39,10 +39,21 @@ interface LoginError extends Error {
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login, user } = useAuth();
     const { t } = useTranslation();
     const [loginError, setLoginError] = useState<string | null>(null);
     const [isUnapproved, setIsUnapproved] = useState(false);
+    const [signupSuccess, setSignupSuccess] = useState<string | null>(null);
+
+    // Check for signup success message in location state
+    useEffect(() => {
+        if (location.state?.from === 'signup' && location.state?.message) {
+            setSignupSuccess(location.state.message);
+            // Clear the location state to prevent showing the message again on refresh
+            window.history.replaceState({}, '');
+        }
+    }, [location]);
     
     // Get translations
     const translations = {
@@ -74,30 +85,36 @@ export default function LoginPage() {
             setIsUnapproved(false);
 
             try {
-                await login({
-                    email: data.email,
-                    password: data.password
-                });
-            } catch (error) {
-                const loginError = error as LoginError;
-
-                if (loginError.response?.status === 403) {
-                    setIsUnapproved(true);
-                    setLoginError(translations.error);
+                try {
+                    await login({
+                        email: data.email.trim().toLowerCase(),
+                        password: data.password
+                    });
+                } catch (error) {
+                    console.error('Login error:', error);
+                    const loginError = error as LoginError;
+                    
+                    // Handle different types of errors
+                    if (loginError.response?.status === 403) {
+                        setIsUnapproved(true);
+                        setLoginError('Your account is pending approval. Please wait for administrator approval.');
+                    } else if (loginError.response?.status === 401) {
+                        setLoginError('Invalid email or password. Please try again.');
+                    } else if (loginError.message) {
+                        setLoginError(loginError.message);
+                    } else if (loginError.response?.data?.message) {
+                        setLoginError(loginError.response.data.message);
+                    } else {
+                        setLoginError(translations.error || 'An unknown error occurred. Please try again.');
+                    }
+                    
+                    throw error;
                 }
-                else if (loginError.message) {
-                    setLoginError(loginError.message);
-                }
-                else if (loginError.response?.data?.message) {
-                    setLoginError(loginError.response.data.message);
-                }
-                else {
-                    setLoginError(translations.error);
-                }
-
-                throw error;
+            } catch (e) {
+                console.error('Unexpected error during login:', e);
+                throw e;
             }
-        },
+        }
     });
 
     const onSubmit = (data: LoginFormData) => {
@@ -106,17 +123,23 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (user) {
-            switch (user.role) {
+            // Convert role to lowercase for case-insensitive comparison
+            const role = user.role?.toLowerCase();
+            console.log('User logged in, redirecting based on role:', role);
+            
+            switch (role) {
                 case "superadmin":
                     navigate("/superadmin");
                     break;
                 case "admin":
                     navigate("/admin");
                     break;
-                case "member":
+                case "user":
+                case "member":  // Handle both 'user' and 'member' roles for dashboard
                     navigate("/dashboard");
                     break;
                 default:
+                    console.warn(`Unknown user role: ${role}, redirecting to home`);
                     navigate("/");
             }
         }
@@ -144,6 +167,22 @@ export default function LoginPage() {
                             {translations.welcome}
                         </motion.h2>
 
+                        {signupSuccess && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mb-4"
+                            >
+                                <Alert variant="default" className="bg-green-50 border-green-200">
+                                    <AlertCircle className="h-4 w-4 text-green-600" />
+                                    <AlertTitle className="text-green-800">Success</AlertTitle>
+                                    <AlertDescription className="text-green-700">
+                                        {signupSuccess}
+                                    </AlertDescription>
+                                </Alert>
+                            </motion.div>
+                        )}
+                        
                         {loginError && (
                             <motion.div
                                 initial={{ opacity: 0, y: -10 }}

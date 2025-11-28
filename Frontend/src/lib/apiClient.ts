@@ -1,8 +1,8 @@
-// @ts-ignore
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getAuthToken, clearAuthToken, setAuthToken } from './auth';
 
-const API_BASE_URL = '/api'; // Using relative path to leverage Vite proxy
+// Use environment variable or fallback to localhost:8080
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 const apiClient: AxiosInstance = axios.create({
     baseURL: API_BASE_URL,
@@ -18,6 +18,8 @@ apiClient.interceptors.request.use(
         const token = getAuthToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+            config.headers['Content-Type'] = 'application/json';
+            config.withCredentials = true;
         }
         return config;
     },
@@ -25,6 +27,40 @@ apiClient.interceptors.request.use(
         return Promise.reject(error);
     }
 );
+
+// Add a request interceptor to log all requests
+const requestLogger = (config: AxiosRequestConfig) => {
+    if (process.env.NODE_ENV === 'development') {
+        console.log('Request:', config.method?.toUpperCase(), config.url, config.data || '');
+    }
+    return config;
+};
+
+// Add a response interceptor to log all responses
+const responseLogger = (response: AxiosResponse) => {
+    if (process.env.NODE_ENV === 'development') {
+        console.log('Response:', response.status, response.config.url, response.data);
+    }
+    return response;
+};
+
+// Add an error interceptor to log all errors
+const errorLogger = (error: any) => {
+    if (process.env.NODE_ENV === 'development') {
+        if (error.response) {
+            console.error('Error Response:', error.response.status, error.response.data);
+        } else if (error.request) {
+            console.error('Error Request:', error.request);
+        } else {
+            console.error('Error Message:', error.message);
+        }
+    }
+    return Promise.reject(error);
+};
+
+// Add interceptors for logging
+apiClient.interceptors.request.use(requestLogger);
+apiClient.interceptors.response.use(responseLogger, errorLogger);
 
 // Response interceptor for handling 401 Unauthorized
 apiClient.interceptors.response.use(
@@ -64,8 +100,11 @@ apiClient.interceptors.response.use(
 
 // Auth API
 export const authApi = {
-    login: (credentials: { username: string; password: string }) =>
-        apiClient.post('/auth/signin', credentials),
+    login: (credentials: { email: string; password: string }) =>
+        apiClient.post('/auth/login', {
+            email: credentials.email.toLowerCase().trim(),
+            password: credentials.password
+        }),
 
     register: (userData: {
         username: string;
@@ -98,7 +137,13 @@ export const authApi = {
 // Users API
 export const usersApi = {
     getCurrentUser: () =>
-        apiClient.get('/users/me'),
+        apiClient.get('/users/me', {
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`,
+                'Accept': 'application/json'
+            },
+            withCredentials: true
+        }),
 
     updateProfile: (userId: string, userData: any) =>
         apiClient.put(`/users/${userId}`, userData),

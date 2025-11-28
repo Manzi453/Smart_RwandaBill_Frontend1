@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { authApi } from "@/lib/apiClient";
+import { setAuthToken, clearAuthToken, getAuthToken } from "@/lib/auth";
 
 // Mock users for development and fallback purposes
 // Define a type for mock users that includes all necessary fields
@@ -136,42 +138,74 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(localStorage.getItem("authToken"));
+    const [token, setToken] = useState<string | null>(getAuthToken());
     const [isLoading, setIsLoading] = useState(true);
 
     const isAuthenticated = !!user && !!token;
 
-    // ---------------- CHECK AUTH (MOCKED) ----------------
+    // ---------------- CHECK AUTH STATUS ----------------
     const checkAuth = async () => {
-        const currentToken = localStorage.getItem("authToken");
+        const currentToken = getAuthToken();
+        
         if (!currentToken) {
+            setUser(null);
+            setToken(null);
             setIsLoading(false);
             return;
         }
 
         try {
-            // Mock user data based on token
-            const mockUser: User = {
-                id: "1",
-                fullName: "Test User",
-                email: "user@example.com",
-                telephone: "+250700000000",
-                district: "Kicukiro",
-                sector: "Gikondo",
-                role: "member",
-                service: undefined,
-                group: "Group A",
-                approved: true,
-                emailVerified: true
-            };
+            // Try to fetch current user from the backend
+            const response = await authApi.getCurrentUser();
+            const userData = response.data;
             
-            setUser(mockUser);
-            setToken(currentToken);
+            if (userData) {
+                const userRole = (userData.role || '').toLowerCase() as 'superadmin' | 'admin' | 'member';
+                
+                const currentUser: User = {
+                    id: userData.id.toString(),
+                    fullName: userData.fullName,
+                    email: userData.email,
+                    telephone: userData.telephone || "+250700000000",
+                    district: userData.district || "Kigali",
+                    sector: userData.sector || "Gikondo",
+                    role: userRole,
+                    service: userData.service,
+                    group: userData.group || "Group A",
+                    approved: userData.approved ?? true,
+                    emailVerified: userData.emailVerified ?? true,
+                };
+                
+                setUser(currentUser);
+                setToken(currentToken);
+            } else {
+                throw new Error('Invalid user data');
+            }
         } catch (error) {
             console.error("Auth check failed:", error);
-            localStorage.removeItem("authToken");
-            setUser(null);
-            setToken(null);
+            // Fallback to mock user in development
+            if (process.env.NODE_ENV === 'development' && currentToken === 'mock-token') {
+                const mockUser: User = {
+                    id: "1",
+                    fullName: "Test User",
+                    email: "user@example.com",
+                    telephone: "+250700000000",
+                    district: "Kicukiro",
+                    sector: "Gikondo",
+                    role: "member",
+                    service: undefined,
+                    group: "Group A",
+                    approved: true,
+                    emailVerified: true
+                };
+                setUser(mockUser);
+                setToken(currentToken);
+            } else {
+                // Clear invalid token
+                clearAuthToken();
+                setUser(null);
+                setToken(null);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -184,17 +218,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         try {
             // 1️⃣ Attempt BACKEND LOGIN
             try {
-                const response = await fetch("/api/auth/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
+                console.log('Attempting login with:', data);
+                const response = await authApi.login({
+                    email: data.email.trim().toLowerCase(),
+                    password: data.password
                 });
+                
+                console.log('Login response:', response);
 
-                if (response.ok) {
-                    const result = await response.json();
-                    localStorage.setItem("authToken", result.token);
-                    setToken(result.token);
+                if (response.data && response.data.token) {
+                    const { token, user: result } = response.data;
+                    console.log('Login successful, user data:', result);
+                    
+                    // Store the token
+                    setAuthToken(token);
+                    setToken(token);
 
+                    // Ensure role is in lowercase for consistency
+                    const userRole = (result.role || '').toLowerCase() as 'superadmin' | 'admin' | 'member';
+                    
                     const loggedUser: User = {
                         id: result.id.toString(),
                         fullName: result.fullName,
@@ -202,7 +244,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                         telephone: result.telephone || "+250700000000",
                         district: result.district || "Kigali",
                         sector: result.sector || "Gikondo",
-                        role: result.role,
+                        role: userRole,
                         service: result.service,
                         group: result.group || "Group A",
                         approved: result.approved ?? true,
@@ -211,9 +253,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
                     setUser(loggedUser);
                     return loggedUser;
+                } else {
+                    throw new Error('Invalid response from server');
                 }
             } catch (error) {
-                console.warn("Backend login failed, falling back to mock users");
+                console.error("Backend login failed:", error);
+                // Only fall back to mock users in development
+                if (process.env.NODE_ENV === 'development') {
+                    console.warn("Falling back to mock users");
+                } else {
+                    const errorMessage = (error as any)?.response?.data?.message || 'Login failed. Please check your credentials and try again.';
+                    throw new Error(errorMessage);
+                }
             }
 
             // 2️⃣ Fallback to MOCK USERS
@@ -253,10 +304,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
 
     // ---------------- LOGOUT ----------------
-    const logout = () => {
-        localStorage.removeItem("authToken");
-        setUser(null);
-        setToken(null);
+    const logout = async () => {
+        try {
+            // Try to call the backend logout endpoint
+            await authApi.logout();
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Continue with client-side cleanup even if backend logout fails
+        } finally {
+            // Clear client-side auth state
+            clearAuthToken();
+            setUser(null);
+            setToken(null);
+        }
     };
 
     // ---------------- SIGNUP (WITH FALLBACK TO MOCK) ----------------
@@ -285,6 +345,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     return service.toUpperCase(); // Convert to uppercase for backend
                 };
 
+                // Map frontend roles to backend roles
+                const roleMapping = {
+                    'member': 'USER',
+                    'admin': 'ADMIN',
+                    'superadmin': 'SUPER_ADMIN'
+                };
+                
+                const backendRole = roleMapping[role as keyof typeof roleMapping] || 'USER';
+                
                 const payload = {
                     fullName: data.fullName.trim(),
                     email: data.email.trim().toLowerCase(),
@@ -292,7 +361,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     district: data.district.trim(),
                     sector: data.sector.trim(),
                     password: data.password,
-                    role: role.toUpperCase(), // Convert to uppercase for backend
+                    role: backendRole,
                     ...(role === 'admin' && data.service ? { 
                         service: formatService(data.service)
                     } : {})
