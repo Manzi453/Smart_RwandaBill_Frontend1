@@ -90,6 +90,7 @@ const en = {
             haveAccount: "Already have an account?",
             login: "Sign In",
             error: "Error creating account",
+            success: "Account created successfully. Redirecting to login...",
             adminDescription: "Register as a service administrator",
             memberDescription: "Join our community",
             role: "Account Type",
@@ -103,8 +104,6 @@ const en = {
             submitButton: "Create Account",
             googleButton: "Sign up with Google",
             orContinueWith: "Or continue with",
-            success: "Account created successfully!",
-            adminSuccess: "Admin account created! Awaiting approval.",
             errors: {
                 nameRequired: "Full name is required",
                 invalidEmail: "Please enter a valid email",
@@ -378,6 +377,7 @@ const fr = {
             haveAccount: "Vous avez déjà un compte ?",
             login: "Se connecter",
             error: "Erreur lors de la création du compte",
+            success: "Compte créé avec succès. Redirection vers la connexion...",
             adminDescription: "S'inscrire en tant qu'administrateur de service",
             memberDescription: "Rejoindre notre communauté",
             role: "Type de compte",
@@ -391,8 +391,6 @@ const fr = {
             submitButton: "Créer un compte",
             googleButton: "S'inscrire avec Google",
             orContinueWith: "Ou continuer avec",
-            success: "Compte créé avec succès !",
-            adminSuccess: "Compte administrateur créé ! En attente d'approbation.",
             errors: {
                 nameRequired: "Le nom complet est requis",
                 invalidEmail: "Veuillez entrer un email valide",
@@ -666,21 +664,22 @@ const rw = {
             button: "Funga Konti",
             haveAccount: "Ufite konti mbere?",
             login: "Injira",
-            error: "Ikosa mu gushinga konti",
+            error: "Ikosa ryo kwiyandikisha",
+            success: "Konti yashyizweho neza. Dushaka kwinjira...",
             adminDescription: "Iyandikishe nk'umuyobozi wa serivisi",
-            memberDescription: "Injira muri komite y'abakoresha",
-            role: "Ubwoko bwa konte",
+            memberDescription: "Duhamagarire muri komite y'abakoresha",
+            signupRole: "Ubwoko bwa konte",
             selectRole: "Hitamo ubwoko bwa konte",
             roles: {
                 member: "Umwe mu baturage",
                 admin: "Umuyobozi wa serivisi"
             },
-            service: "Ubwoko bwa serivisi",
+            signupService: "Ubwoko bwa serivisi",
             selectService: "Hitamo serivisi",
             submitButton: "Funga Konti",
             googleButton: "Iyandikishe ukoresheje Google",
             orContinueWith: "Cyangwa komeza hamwe na",
-            success: "Konti yashizweho neza!",
+            //success: "Konti yashizweho neza!",
             adminSuccess: "Konti y'umuyobozi yashizweho! Tegereza icyemezo.",
             errors: {
                 nameRequired: "Izina rirakenewe",
@@ -694,12 +693,6 @@ const rw = {
                 sectorRequired: "Umurenge ukenewe kuri konte z'abayobozi",
                 serviceRequired: "Serivisi irakenewe kuri konte z'abayobozi"
             }
-        },
-        /* ---------------- SERVICES ---------------- */
-        services: {
-            water: "Amazi",
-            sanitation: "Ikirundo",
-            security: "Umutekano"
         },
         /* ---------------- DISTRICTS ---------------- */
         districts: {

@@ -2,7 +2,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getAuthToken, clearAuthToken, setAuthToken } from './auth';
 
-const API_BASE_URL = 'http://localhost:8083/api';
+const API_BASE_URL = '/api'; // Using relative path to leverage Vite proxy
 
 const apiClient: AxiosInstance = axios.create({
     baseURL: API_BASE_URL,

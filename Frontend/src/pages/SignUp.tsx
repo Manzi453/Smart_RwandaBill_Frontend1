@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -11,17 +11,41 @@ import { Card, CardContent } from "@/components/ui/Card";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { z } from 'zod';
+import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+
+// Define valid roles and services as constants
+export const USER_ROLES = ['admin', 'member'] as const;
+export type UserRole = typeof USER_ROLES[number];
+
+export const SERVICE_TYPES = ['water', 'sanitation', 'security'] as const;
+export type ServiceType = typeof SERVICE_TYPES[number];
 
 const signupSchema = z.object({
-    fullName: z.string().min(3, 'Full name must be at least 3 characters'),
-    email: z.string().email('Invalid email address'),
-    telephone: z.string().min(10, 'Phone number must be at least 10 digits'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    role: z.enum(['member', 'admin']),
-    service: z.enum(['water', 'sanitation', 'security']).optional(),
-    district: z.string().min(1, 'District is required'),
-    sector: z.string().min(1, 'Sector is required'),
+    fullName: z.string()
+        .min(3, 'Full name must be at least 3 characters')
+        .max(100, 'Full name must be less than 100 characters'),
+    email: z.string()
+        .email('Invalid email address')
+        .min(5, 'Email must be at least 5 characters')
+        .max(100, 'Email must be less than 100 characters'),
+    telephone: z.string()
+        .min(10, 'Phone number must be at least 10 digits')
+        .max(20, 'Phone number must be less than 20 digits'),
+    password: z.string()
+        .min(8, 'Password must be at least 8 characters')
+        .max(100, 'Password must be less than 100 characters'),
+    role: z.enum(USER_ROLES).default('member'),
+    service: z.enum(SERVICE_TYPES).optional(),
+    district: z.string()
+        .min(1, 'District is required')
+        .max(100, 'District must be less than 100 characters'),
+    sector: z.string()
+        .min(1, 'Sector is required')
+        .max(100, 'Sector must be less than 100 characters'),
 }).refine((data) => {
     if (data.role === 'admin') {
         return data.service !== undefined;
@@ -31,20 +55,8 @@ const signupSchema = z.object({
     message: 'Service is required for admin accounts',
     path: ['service']
 });
-import { useAuth } from "@/contexts/AuthContext";
-import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 
-type SignupFormData = {
-    fullName: string;
-    email: string;
-    telephone: string;
-    password: string;
-    role: 'member' | 'admin';
-    service?: 'water' | 'sanitation' | 'security';
-    district: string;
-    sector: string;
-};
+type SignupFormData = z.infer<typeof signupSchema>;
 
 declare global {
     interface Error {
@@ -60,31 +72,51 @@ declare global {
 export default function SignupPage() {
     const { signup, user } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const { t } = useTranslation();
     const [signupError, setSignupError] = useState<string | null>(null);
+    const [isAdminSignup, setIsAdminSignup] = useState(false);
     const [districts] = useState<string[]>(["Kigali", "Gasabo", "Nyarugenge", "Kicukiro"]);
+    const [sectors, setSectors] = useState<string[]>([]);
+    
+    // Services for admin signup
     const services = [
         { value: 'water', label: t('services.water') },
         { value: 'sanitation', label: t('services.sanitation') },
         { value: 'security', label: t('services.security') }
     ];
-    const roles = [
-        { value: 'member', label: t('signup.roles.member') },
-        { value: 'admin', label: t('signup.roles.admin') }
-    ];
-    const [sectors, setSectors] = useState<string[]>([]);
+    
+    // Check if this is an admin signup from the URL
+    useEffect(() => {
+        const isAdmin = new URLSearchParams(location.search).get('type') === 'admin';
+        setIsAdminSignup(isAdmin);
+    }, [location]);
 
     const {
         register,
         handleSubmit,
         watch,
+        resetField,
         formState: { errors },
     } = useForm<SignupFormData>({
         resolver: zodResolver(signupSchema),
         mode: "onBlur",
+        defaultValues: {
+            role: undefined
+        }
     });
 
     const selectedDistrict = watch('district');
+
+    // Update form when switching between user and admin signup
+    useEffect(() => {
+        if (isAdminSignup) {
+            resetField('role', { defaultValue: 'admin' });
+        } else {
+            resetField('role', { defaultValue: undefined });
+            resetField('service', { defaultValue: undefined });
+        }
+    }, [isAdminSignup, resetField]);
 
     useEffect(() => {
         if (selectedDistrict) {
@@ -95,23 +127,34 @@ export default function SignupPage() {
     }, [selectedDistrict]);
 
     const mutation = useMutation({
-        mutationFn: async (data: SignupFormData) => {
+        mutationFn: async (formData: SignupFormData) => {
             setSignupError(null);
-            try {
-                const result = await signup({
-                    fullName: data.fullName,
-                    email: data.email,
-                    password: data.password,
-                    telephone: data.telephone,
-                    district: data.district,
-                    sector: data.sector,
-                    role: data.role,
-                    service: data.service
-                });
+            
+            // Prepare the signup data with proper typing
+            // Prepare signup data with proper typing
+            const signupData = {
+                fullName: formData.fullName,
+                email: formData.email,
+                telephone: formData.telephone,
+                district: formData.district,
+                sector: formData.sector,
+                password: formData.password,
+                role: isAdminSignup ? 'admin' as const : 'member' as const,
+                ...(isAdminSignup && formData.service ? {
+                    service: formData.service
+                } : {})
+            };
+            
+            console.log('Prepared signup data:', JSON.stringify(signupData, null, 2));
 
+            try {
+                const result = await signup(signupData);
+                
                 if (!result.success) {
                     throw new Error(result.message || 'Signup failed');
                 }
+                
+                return result;
             } catch (error) {
                 const err = error as Error;
                 setSignupError(err.message || t('signup.error'));
@@ -120,8 +163,38 @@ export default function SignupPage() {
         },
     });
 
-    const onSubmit = (data: SignupFormData) => {
-        mutation.mutate(data);
+    const onSubmit = async (formData: SignupFormData) => {
+        try {
+            await mutation.mutateAsync(formData, {
+                onSuccess: (result) => {
+                    // Show success message
+                    toast.success(result.message || (isAdminSignup 
+                        ? 'Admin registration submitted for approval' 
+                        : 'Registration successful! You can now log in.'));
+                    
+                    // Reset form
+                    // navigate to login after a short delay
+                    setTimeout(() => {
+                        navigate('/login', { 
+                            state: { 
+                                message: isAdminSignup 
+                                    ? 'Your admin account is pending approval. You will be notified once approved.'
+                                    : 'You can now log in with your credentials.'
+                            } 
+                        });
+                    }, 2000);
+                },
+                onError: (error: Error) => {
+                    console.error('Signup error:', error);
+                    // Show more detailed error message if available
+                    const errorMessage = error.response?.data?.message || error.message || 'Signup failed';
+                    toast.error(errorMessage);
+                }
+            });
+        } catch (error) {
+            console.error('Unexpected error during signup:', error);
+            toast.error('An unexpected error occurred. Please try again.');
+        }
     };
 
     useEffect(() => {
@@ -132,7 +205,7 @@ export default function SignupPage() {
 
     // Get translations
     const translations = {
-        createAccount: t('signup.createAccount'),
+        createAccount: isAdminSignup ? t('signup.createAdminAccount') : t('signup.createAccount'),
         fullName: t('signup.fullName'),
         fullNamePlaceholder: t('signup.fullNamePlaceholder'),
         email: t('signup.email'),
@@ -149,12 +222,22 @@ export default function SignupPage() {
         selectService: t('signup.selectService'),
         password: t('signup.password'),
         passwordPlaceholder: t('signup.passwordPlaceholder'),
-        button: t('signup.button'),
+        button: isAdminSignup ? t('signup.requestAdminAccess') : t('signup.button'),
         haveAccount: t('signup.haveAccount'),
         login: t('signup.login'),
         error: t('signup.error'),
         commonError: t('common.error'),
         goBack: t('common.goBack'),
+        userType: {
+            user: t('signup.userType.user'),
+            admin: t('signup.userType.admin')
+        },
+        adminNote: t('signup.adminNote')
+    };
+    
+    const toggleUserType = () => {
+        const newType = isAdminSignup ? 'user' : 'admin';
+        navigate(`/signup?type=${newType}`, { replace: true });
     };
 
     return (
@@ -192,6 +275,32 @@ export default function SignupPage() {
                                     <AlertDescription>{signupError}</AlertDescription>
                                 </Alert>
                             </motion.div>
+                        )}
+
+                        {/* User Type Toggle */}
+                        <div className="flex justify-center mb-6">
+                            <div className="bg-gray-100 p-1 rounded-lg flex">
+                                <button
+                                    type="button"
+                                    className={`px-4 py-2 rounded-md ${!isAdminSignup ? 'bg-white shadow' : 'hover:bg-gray-50'}`}
+                                    onClick={toggleUserType}
+                                >
+                                    {translations.userType.user}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`px-4 py-2 rounded-md ${isAdminSignup ? 'bg-white shadow' : 'hover:bg-gray-50'}`}
+                                    onClick={toggleUserType}
+                                >
+                                    {translations.userType.admin}
+                                </button>
+                            </div>
+                        </div>
+
+                        {isAdminSignup && (
+                            <div className="mb-4 p-3 bg-blue-50 text-blue-700 text-sm rounded-md">
+                                {translations.adminNote}
+                            </div>
                         )}
 
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -307,49 +416,32 @@ export default function SignupPage() {
                                 )}
                             </div>
 
-                            <div>
-                                <Label htmlFor="role">{t('signup.role')}</Label>
-                                <select
-                                    id="role"
-                                    {...register("role")}
-                                    className={`mt-1 block w-full rounded-md border ${errors.role ? 'border-red-500' : 'border-gray-300'} p-2`}
-                                    disabled={mutation.isPending}
-                                >
-                                    <option value="">{t('signup.selectRole')}</option>
-                                    {roles.map((role) => (
-                                        <option key={role.value} value={role.value}>
-                                            {role.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.role && (
-                                    <p className="mt-1 text-sm text-red-500">
-                                        {errors.role.message as string}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div>
-                                <Label htmlFor="service">{t('signup.service')}</Label>
-                                <select
-                                    id="service"
-                                    {...register("service")}
-                                    className={`mt-1 block w-full rounded-md border ${errors.service ? 'border-red-500' : 'border-gray-300'} p-2`}
-                                    disabled={!watch('role') || watch('role') !== 'admin' || mutation.isPending}
-                                >
-                                    <option value="">{t('signup.selectService')}</option>
-                                    {services.map((service) => (
-                                        <option key={service.value} value={service.value}>
-                                            {service.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.service && (
-                                    <p className="mt-1 text-sm text-red-500">
-                                        {errors.service.message as string}
-                                    </p>
-                                )}
-                            </div>
+                            {isAdminSignup && (
+                                <>
+                                    <input type="hidden" {...register("role")} value="admin" />
+                                    <div>
+                                        <Label htmlFor="service">{t('signup.service')}</Label>
+                                        <select
+                                            id="service"
+                                            {...register("service")}
+                                            className={`mt-1 block w-full rounded-md border ${errors.service ? 'border-red-500' : 'border-gray-300'} p-2`}
+                                            disabled={mutation.isPending}
+                                        >
+                                            <option value="">{t('signup.selectService')}</option>
+                                            {services.map((service) => (
+                                                <option key={service.value} value={service.value}>
+                                                    {service.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {errors.service && (
+                                            <p className="mt-1 text-sm text-red-500">
+                                                {errors.service.message as string}
+                                            </p>
+                                        )}
+                                    </div>
+                                </>
+                            )}
 
                             <div className="flex flex-col space-y-3">
                                 <Button type="submit" className="w-full" disabled={mutation.isPending}>

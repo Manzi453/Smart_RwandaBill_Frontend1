@@ -117,8 +117,9 @@ interface AuthContextType {
         district: string;
         sector: string;
         password: string;
-        role: 'admin' | 'member';
+        role?: 'admin' | 'member';
         service?: 'water' | 'sanitation' | 'security';
+        group?: string;
     }) => Promise<{ success: boolean; message: string }>;
     googleSignup: (data: { fullName: string; email: string }) => Promise<void>;
     isLoading: boolean;
@@ -266,7 +267,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         district: string;
         sector: string;
         password: string;
-        role: 'admin' | 'member';
+        role?: 'admin' | 'member';
         service?: 'water' | 'sanitation' | 'security';
         group?: string;
     }) => {
@@ -274,28 +275,55 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         try {
             // 1️⃣ Attempt BACKEND SIGNUP
             try {
-                // Ensure service is only included for admin roles
-                const payload = {
-                    ...data,
-                    service: data.role === 'admin' ? data.service : undefined
+                // Set default role to 'member' if not provided
+                const role = data.role || 'member';
+                
+                // Prepare the payload with role and service (if admin)
+                // Format the service value to match the backend enum (UPPERCASE)
+                const formatService = (service: string) => {
+                    if (!service) return undefined;
+                    return service.toUpperCase(); // Convert to uppercase for backend
                 };
 
-                const response = await fetch("/api/auth/signup", {
+                const payload = {
+                    fullName: data.fullName.trim(),
+                    email: data.email.trim().toLowerCase(),
+                    telephone: data.telephone.trim(),
+                    district: data.district.trim(),
+                    sector: data.sector.trim(),
+                    password: data.password,
+                    role: role.toUpperCase(), // Convert to uppercase for backend
+                    ...(role === 'admin' && data.service ? { 
+                        service: formatService(data.service)
+                    } : {})
+                };
+                
+                console.log('Sending signup payload:', JSON.stringify(payload, null, 2));
+
+                const response = await fetch("http://localhost:8080/api/auth/signup", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
+                        "Accept": "application/json",
                     },
+                    credentials: 'include',
+                    mode: 'cors',
                     body: JSON.stringify(payload),
                 });
-
+                
+                const responseData = await response.json();
+                
                 if (!response.ok) {
-                    const error = await response.json().catch(() => ({}));
-                    throw new Error(error.message || "Signup failed");
+                    console.error('Backend error:', responseData);
+                    throw new Error(responseData.message || 'Signup failed');
                 }
 
                 return { 
                     success: true, 
-                    message: "Registration successful! Please wait for admin approval." 
+                    message: role === 'admin' 
+                        ? "Admin registration request submitted. Please wait for approval." 
+                        : "Registration successful! You can now log in.",
+                    user: responseData
                 };
             } catch (error) {
                 console.warn("Backend signup failed, falling back to mock");
