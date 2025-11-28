@@ -9,8 +9,8 @@ import { ServiceComparison } from "../components/superadmin/ServiceComparison";
 import { SystemHealthMonitoring } from "../components/superadmin/SystemHealthMonitoring";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import AdminApprovals from "./AdminApprovals";
 import type { ReactNode } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 // Navigation types will be handled by the SuperadminNavbar component
 
@@ -183,7 +183,19 @@ const SuperAdmin = () => {
             <AnimatePresence mode="wait">
               <Routes>
                 <Route path="/" element={<SuperAdminDashboard />} />
-                <Route path="/approvals" element={<AdminApprovals />} />
+                <Route path="/approvals" element={
+                  <div className="container mx-auto p-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Admin Approvals</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p>Admin approval requests will be listed here.</p>
+                        {/* Add your admin approval logic and UI components here */}
+                      </CardContent>
+                    </Card>
+                  </div>
+                } />
               </Routes>
             </AnimatePresence>
           </div>

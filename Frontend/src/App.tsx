@@ -7,7 +7,6 @@ import  Admin from "./pages/Admin";
 import SignUpPage from "./pages/SignUp";
 import { User } from "./pages/User";
 import SuperAdmin from "./pages/SuperAdmin";
-import AdminApprovals from "./pages/AdminApprovals";
 import { AnimatePresence, motion } from "framer-motion";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -117,22 +116,6 @@ function AnimatedRoutes() {
                 transition={{ duration: 0.5 }}
               >
                 <SuperAdmin />
-              </motion.div>
-            </RoleProtectedRoute>
-          }
-        />
-        
-        <Route
-          path="/admin/approvals"
-          element={
-            <RoleProtectedRoute allowedRoles={["superadmin"]}>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <AdminApprovals />
               </motion.div>
             </RoleProtectedRoute>
           }

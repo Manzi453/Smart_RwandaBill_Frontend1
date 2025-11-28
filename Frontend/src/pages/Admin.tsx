@@ -21,8 +21,8 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from ".
 import { Badge } from "../components/ui/badge";
 import { ExportReports } from '../components/admin/ExportReports';
 import { AdvancedFilters } from "../components/admin/AdvancedFilters";
-import { DashboardWidgets } from "@/components/DashboardWidgets";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import  DashboardWidgets  from "@/components/DashboardWidgets";
+import AdminSidebar from "@/components/admin/AdminSidebar";
 import {
     Users,
     DollarSign,
