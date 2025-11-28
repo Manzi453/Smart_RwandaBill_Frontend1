@@ -1,9 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { authApi } from "@/lib/apiClient";
-import { setAuthToken, clearAuthToken, getAuthToken } from "@/lib/auth";
 
-// Mock users for development and fallback purposes
-// Define a type for mock users that includes all necessary fields
+// Mock users for development
 interface MockUser {
     fullName: string;
     email: string;
@@ -138,163 +135,83 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(getAuthToken());
+    const [token, setToken] = useState<string | null>(() => {
+        if (typeof window !== 'undefined') {
+            return sessionStorage.getItem("authToken");
+        }
+        return null;
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     const isAuthenticated = !!user && !!token;
 
-    // ---------------- CHECK AUTH STATUS ----------------
+    // Check if email exists in mock users
+    const getUserByEmail = (email: string): MockUser | undefined => {
+        return MOCK_USERS.find(u => u.email.toLowerCase() === email.toLowerCase());
+    };
+
+    // Generate mock token
+    const generateMockToken = (): string => {
+        return `mock-token-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    };
+
+    // Convert mock user to User type
+    const mockUserToUser = (mockUser: MockUser): User => {
+        return {
+            id: `mock-${MOCK_USERS.indexOf(mockUser)}`,
+            fullName: mockUser.fullName,
+            email: mockUser.email,
+            telephone: mockUser.telephone,
+            district: mockUser.district,
+            sector: mockUser.sector,
+            role: mockUser.role,
+            service: mockUser.service,
+            group: mockUser.group,
+            approved: mockUser.approved,
+            emailVerified: mockUser.emailVerified,
+        };
+    };
+
+    // Check auth status on mount
     const checkAuth = async () => {
-        const currentToken = getAuthToken();
+        const storedToken = typeof window !== 'undefined' ? sessionStorage.getItem("authToken") : null;
         
-        if (!currentToken) {
+        if (!storedToken) {
             setUser(null);
             setToken(null);
             setIsLoading(false);
             return;
         }
 
-        try {
-            // Try to fetch current user from the backend
-            const response = await authApi.getCurrentUser();
-            const userData = response.data;
-            
-            if (userData) {
-                const userRole = (userData.role || '').toLowerCase() as 'superadmin' | 'admin' | 'member';
-                
-                const currentUser: User = {
-                    id: userData.id.toString(),
-                    fullName: userData.fullName,
-                    email: userData.email,
-                    telephone: userData.telephone || "+250700000000",
-                    district: userData.district || "Kigali",
-                    sector: userData.sector || "Gikondo",
-                    role: userRole,
-                    service: userData.service,
-                    group: userData.group || "Group A",
-                    approved: userData.approved ?? true,
-                    emailVerified: userData.emailVerified ?? true,
-                };
-                
-                setUser(currentUser);
-                setToken(currentToken);
-            } else {
-                throw new Error('Invalid user data');
-            }
-        } catch (error) {
-            console.error("Auth check failed:", error);
-            // Fallback to mock user in development
-            if (process.env.NODE_ENV === 'development' && currentToken === 'mock-token') {
-                const mockUser: User = {
-                    id: "1",
-                    fullName: "Test User",
-                    email: "user@example.com",
-                    telephone: "+250700000000",
-                    district: "Kicukiro",
-                    sector: "Gikondo",
-                    role: "member",
-                    service: undefined,
-                    group: "Group A",
-                    approved: true,
-                    emailVerified: true
-                };
-                setUser(mockUser);
-                setToken(currentToken);
-            } else {
-                // Clear invalid token
-                clearAuthToken();
-                setUser(null);
-                setToken(null);
-            }
-        } finally {
-            setIsLoading(false);
-        }
+        // For mock, we just restore the user if token exists
+        // In a real app, you'd validate the token here
+        setToken(storedToken);
+        setIsLoading(false);
     };
 
-    // ---------------- LOGIN (WITH FALLBACK TO MOCK) ----------------
+    // Login with mock users only
     const login = async (data: { email: string; password: string }) => {
         setIsLoading(true);
 
         try {
-            // 1️⃣ Attempt BACKEND LOGIN
-            try {
-                console.log('Attempting login with:', data);
-                const response = await authApi.login({
-                    email: data.email.trim().toLowerCase(),
-                    password: data.password
-                });
-                
-                console.log('Login response:', response);
-
-                if (response.data && response.data.token) {
-                    const { token, user: result } = response.data;
-                    console.log('Login successful, user data:', result);
-                    
-                    // Store the token
-                    setAuthToken(token);
-                    setToken(token);
-
-                    // Ensure role is in lowercase for consistency
-                    const userRole = (result.role || '').toLowerCase() as 'superadmin' | 'admin' | 'member';
-                    
-                    const loggedUser: User = {
-                        id: result.id.toString(),
-                        fullName: result.fullName,
-                        email: result.email,
-                        telephone: result.telephone || "+250700000000",
-                        district: result.district || "Kigali",
-                        sector: result.sector || "Gikondo",
-                        role: userRole,
-                        service: result.service,
-                        group: result.group || "Group A",
-                        approved: result.approved ?? true,
-                        emailVerified: result.emailVerified ?? true,
-                    };
-
-                    setUser(loggedUser);
-                    return loggedUser;
-                } else {
-                    throw new Error('Invalid response from server');
-                }
-            } catch (error) {
-                console.error("Backend login failed:", error);
-                // Only fall back to mock users in development
-                if (process.env.NODE_ENV === 'development') {
-                    console.warn("Falling back to mock users");
-                } else {
-                    const errorMessage = (error as any)?.response?.data?.message || 'Login failed. Please check your credentials and try again.';
-                    throw new Error(errorMessage);
-                }
-            }
-
-            // 2️⃣ Fallback to MOCK USERS
-            const mock = MOCK_USERS.find(
-                (m) => m.email === data.email && m.password === data.password
+            const mockUser = MOCK_USERS.find(
+                (m) => m.email.toLowerCase() === data.email.toLowerCase() && m.password === data.password
             );
 
-            if (mock) {
-                const mockUser: User = {
-                    id: `mock-${Date.now()}`,
-                    fullName: mock.fullName,
-                    email: mock.email,
-                    telephone: "+250700000000",
-                    district: "Kigali",
-                    sector: "Gikondo",
-                    role: mock.role,
-                    service: mock.service,
-                    group: "Group A",
-                    approved: true,
-                    emailVerified: true,
-                };
-
-                const mockToken = `mock-jwt-token-${Date.now()}`;
-                localStorage.setItem("authToken", mockToken);
-                setToken(mockToken);
-                setUser(mockUser);
-                return mockUser;
+            if (!mockUser) {
+                throw new Error("Invalid email or password");
             }
 
-            throw new Error("Invalid email or password");
+            const mockToken = generateMockToken();
+            const loggedUser = mockUserToUser(mockUser);
+
+            if (typeof window !== 'undefined') {
+                sessionStorage.setItem("authToken", mockToken);
+            }
+            setToken(mockToken);
+            setUser(loggedUser);
+
+            return loggedUser;
         } catch (err) {
             console.error(err);
             throw err;
@@ -303,23 +220,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
     };
 
-    // ---------------- LOGOUT ----------------
-    const logout = async () => {
-        try {
-            // Try to call the backend logout endpoint
-            await authApi.logout();
-        } catch (error) {
-            console.error("Logout error:", error);
-            // Continue with client-side cleanup even if backend logout fails
-        } finally {
-            // Clear client-side auth state
-            clearAuthToken();
-            setUser(null);
-            setToken(null);
+    // Logout
+    const logout = () => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.removeItem("authToken");
         }
+        setUser(null);
+        setToken(null);
     };
 
-    // ---------------- SIGNUP (WITH FALLBACK TO MOCK) ----------------
+    // Signup with mock users only
     const signup = async (data: {
         fullName: string;
         email: string;
@@ -332,115 +242,70 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         group?: string;
     }) => {
         setIsLoading(true);
+
         try {
-            // 1️⃣ Attempt BACKEND SIGNUP
-            try {
-                // Set default role to 'member' if not provided
-                const role = data.role || 'member';
-                
-                // Prepare the payload with role and service (if admin)
-                // Format the service value to match the backend enum (UPPERCASE)
-                const formatService = (service: string) => {
-                    if (!service) return undefined;
-                    return service.toUpperCase(); // Convert to uppercase for backend
-                };
-
-                // Map frontend roles to backend roles
-                const roleMapping = {
-                    'member': 'USER',
-                    'admin': 'ADMIN',
-                    'superadmin': 'SUPER_ADMIN'
-                };
-                
-                const backendRole = roleMapping[role as keyof typeof roleMapping] || 'USER';
-                
-                const payload = {
-                    fullName: data.fullName.trim(),
-                    email: data.email.trim().toLowerCase(),
-                    telephone: data.telephone.trim(),
-                    district: data.district.trim(),
-                    sector: data.sector.trim(),
-                    password: data.password,
-                    role: backendRole,
-                    ...(role === 'admin' && data.service ? { 
-                        service: formatService(data.service)
-                    } : {})
-                };
-                
-                console.log('Sending signup payload:', JSON.stringify(payload, null, 2));
-
-                const response = await fetch("http://localhost:8080/api/auth/signup", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json",
-                    },
-                    credentials: 'include',
-                    mode: 'cors',
-                    body: JSON.stringify(payload),
-                });
-                
-                const responseData = await response.json();
-                
-                if (!response.ok) {
-                    console.error('Backend error:', responseData);
-                    throw new Error(responseData.message || 'Signup failed');
-                }
-
-                return { 
-                    success: true, 
-                    message: role === 'admin' 
-                        ? "Admin registration request submitted. Please wait for approval." 
-                        : "Registration successful! You can now log in.",
-                    user: responseData
-                };
-            } catch (error) {
-                console.warn("Backend signup failed, falling back to mock");
-            }
-
-            // 2️⃣ Fallback to MOCK SIGNUP
-            if (MOCK_USERS.some(user => user.email === data.email)) {
+            // Check if email already exists
+            if (getUserByEmail(data.email)) {
                 throw new Error("User with this email already exists");
             }
 
-            // Add to mock users (in memory only)
-            const newUser: MockUser = {
-                ...data,
-                role: data.role || "member" as const,
-                approved: false,
-                emailVerified: false,
-                group: data.group || (data.role === 'admin' ? 'Administrators' : 'Residents')
+            // Add new user to mock users
+            const newMockUser: MockUser = {
+                fullName: data.fullName,
+                email: data.email,
+                telephone: data.telephone,
+                district: data.district,
+                sector: data.sector,
+                password: data.password,
+                role: data.role || 'member',
+                service: data.service,
+                group: data.group || (data.role === 'admin' ? 'Administrators' : 'Residents'),
+                approved: data.role === 'member', // Members auto-approved, admins need approval
+                emailVerified: true,
             };
-            MOCK_USERS.push(newUser);
+
+            MOCK_USERS.push(newMockUser);
 
             return {
                 success: true,
-                message: "Registration successful! Please wait for admin approval."
+                message: data.role === 'admin' 
+                    ? "Admin registration submitted. Pending approval." 
+                    : "Registration successful! You can now log in.",
             };
         } catch (err) {
             console.error(err);
             return {
                 success: false,
-                message: err instanceof Error ? err.message : "Registration failed. Please try again."
+                message: err instanceof Error ? err.message : "Registration failed. Please try again.",
             };
         } finally {
             setIsLoading(false);
         }
     };
 
-    // ---------------- GOOGLE SIGNUP ----------------
+    // Google signup (mock only)
     const googleSignup = async (data: { fullName: string; email: string }) => {
         setIsLoading(true);
-        try {
-            const res = await fetch("/api/auth/oauth/signup", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
 
-            if (!res.ok) {
-                throw new Error("Google signup failed");
+        try {
+            if (getUserByEmail(data.email)) {
+                throw new Error("User with this email already exists");
             }
+
+            const newMockUser: MockUser = {
+                fullName: data.fullName,
+                email: data.email,
+                telephone: "+250700000000",
+                district: "Kigali",
+                sector: "Gikondo",
+                password: "", // No password for OAuth users
+                role: "member",
+                group: "Residents",
+                approved: true,
+                emailVerified: true,
+            };
+
+            MOCK_USERS.push(newMockUser);
         } catch (error) {
             console.error("Google signup error:", error);
             throw error;
